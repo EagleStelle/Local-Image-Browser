@@ -8,7 +8,12 @@
     mc:Ignorable="d"
     Title="Local Image Browser">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" KeyDown="Grid_KeyDown">
+    <Grid x:Name="MainGrid"
+          Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" 
+          AllowDrop="True" 
+          Drop="OnDrop" 
+          DragOver="OnDragOver"
+          KeyDown="Grid_KeyDown">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />

@@ -16,6 +16,8 @@ using Microsoft.UI.Xaml.Controls;
 using System.Threading.Tasks;
 using Microsoft.UI.Input;
 using Windows.UI.Core;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage;
 
 namespace App1
 {
@@ -39,6 +41,11 @@ namespace App1
             fileWatcher.Created += OnFolderChanged;
             fileWatcher.Deleted += OnFolderChanged;
             fileWatcher.Renamed += OnFolderChanged;
+
+            // Initialize Drop and Drag Events
+            MainGrid.AllowDrop = true;
+            MainGrid.Drop += OnDrop;
+            MainGrid.DragOver += OnDragOver;
 
             // Initialize hover events for Next and Previous buttons
             NextButton.Opacity = 0;
@@ -81,6 +88,43 @@ namespace App1
             {
                 var dialog = new MessageDialog($"Error playing sound: {ex.Message}");
             }
+        }
+
+        private async void OnDrop(object sender, Microsoft.UI.Xaml.DragEventArgs e)
+        {
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                var items = await e.DataView.GetStorageItemsAsync();
+                if (items.Count > 0)
+                {
+                    var storageItem = items[0];
+                    if (storageItem.IsOfType(StorageItemTypes.Folder))
+                    {
+                        // Folder dropped
+                        ImageFolderPath.Text = storageItem.Path;
+                        LoadImagesFromFolder(storageItem.Path);
+                    }
+                    else if (storageItem.IsOfType(StorageItemTypes.File))
+                    {
+                        // File dropped
+                        var fileExtension = Path.GetExtension(storageItem.Name).ToLower();
+                        if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png")
+                        {
+                            var folderPath = Path.GetDirectoryName(storageItem.Path);
+                            ImageFolderPath.Text = folderPath;
+                            LoadImagesFromFolder(folderPath);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void OnDragOver(object sender, Microsoft.UI.Xaml.DragEventArgs e)
+        {
+            e.AcceptedOperation = DataPackageOperation.Copy;
+            e.DragUIOverride.Caption = "Drop to load folder or image";
+            e.DragUIOverride.IsCaptionVisible = true;
+            e.DragUIOverride.IsContentVisible = true;
         }
 
         // Event for the 'Browse Image Folder' button click
@@ -459,20 +503,6 @@ namespace App1
                 LoadImagesFromFolder(ImageFolderPath.Text);
             }
         }
-
-        // Event handlers for mouse enter and leave events
-        private void Button_MouseEnter(object sender, PointerRoutedEventArgs e)
-        {
-            var button = sender as Button;
-            button.Visibility = Visibility.Visible;
-        }
-
-        private void Button_MouseLeave(object sender, PointerRoutedEventArgs e)
-        {
-            var button = sender as Button;
-            button.Visibility = Visibility.Collapsed;
-        }
-
 
         // Event for handling key presses (hotkeys)
         private void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
