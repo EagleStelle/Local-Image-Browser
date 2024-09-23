@@ -106,13 +106,22 @@ namespace App1
                     }
                     else if (storageItem.IsOfType(StorageItemTypes.File))
                     {
-                        // File dropped
+                        // Image file dropped
                         var fileExtension = Path.GetExtension(storageItem.Name).ToLower();
                         if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png")
                         {
                             var folderPath = Path.GetDirectoryName(storageItem.Path);
                             ImageFolderPath.Text = folderPath;
                             LoadImagesFromFolder(folderPath);
+
+                            // Display the dropped image
+                            var imagePath = storageItem.Path;
+                            currentIndex = imageFiles.IndexOf(imagePath);
+                            if (currentIndex != -1)
+                            {
+                                DisplayImage(currentIndex);
+                                ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
+                            }
                         }
                     }
                 }
