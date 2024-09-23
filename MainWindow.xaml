@@ -10,7 +10,9 @@
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" KeyDown="Grid_KeyDown">
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
@@ -19,25 +21,45 @@
         </Grid.RowDefinitions>
 
         <!-- Image display area -->
-        <Border Background="#2e2e2e" Grid.Row="0" Margin="10">
+        <Border Background="#2e2e2e" Grid.Row="0" Grid.ColumnSpan="3" Margin="10">
             <Grid>
                 <!-- File name display -->
                 <TextBlock x:Name="ImageFileName" 
-                   HorizontalAlignment="Center" 
-                   VerticalAlignment="Top" 
-                   FontSize="18" 
-                   Foreground="White"
-                   TextAlignment="Center" />
+                           HorizontalAlignment="Center" 
+                           VerticalAlignment="Top" 
+                           FontSize="18" 
+                           Foreground="White"
+                           TextAlignment="Center" />
 
                 <!-- Image display -->
                 <Image x:Name="SelectedImage" 
                        Stretch="Uniform" 
                        Margin="0,30,0,0"/>
+
+                <!-- Previous Button on the left side -->
+                <Button x:Name="PreviousButton"
+                        Content="Previous"
+                        Width="100"
+                        VerticalAlignment="Stretch"
+                        HorizontalAlignment="Left"
+                        Click="PreviousImage_Click"
+                        Background="#333333"
+                        Foreground="White"/>
+
+                <!-- Next Button on the right side -->
+                <Button x:Name="NextButton"
+                        Content="Next"
+                        Width="100"
+                        VerticalAlignment="Stretch"
+                        HorizontalAlignment="Right"
+                        Click="NextImage_Click"
+                        Background="#333333"
+                        Foreground="White"/>
             </Grid>
         </Border>
 
         <!-- Bottom section with buttons and textboxes -->
-        <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10">
+        <Grid Grid.Row="1" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -83,23 +105,8 @@
                 </StackPanel>
             </StackPanel>
 
-            <!-- Right side for navigation and move buttons -->
-            <StackPanel Orientation="Vertical" Grid.Column="2" HorizontalAlignment="Right">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,5">
-                    <Button Content="Previous" 
-                            Width="100" 
-                            Margin="0,0,5,0" 
-                            Click="PreviousImage_Click"
-                            Background="#333333" 
-                            Foreground="White" />
-
-                    <Button Content="Next" 
-                            Width="100" 
-                            Click="NextImage_Click"
-                            Background="#333333" 
-                            Foreground="White" />
-                </StackPanel>
-
+            <!-- Right side for Move button -->
+            <StackPanel Orientation="Horizontal" Grid.Column="2" HorizontalAlignment="Right">
                 <Button Content="Move" 
                         Width="100"
                         HorizontalAlignment="Right"

@@ -12,6 +12,7 @@ using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.Storage.Pickers;
 using Windows.UI.Popups;
+using Microsoft.UI.Xaml.Controls;
 
 namespace App1
 {
@@ -35,6 +36,16 @@ namespace App1
             fileWatcher.Created += OnFolderChanged;
             fileWatcher.Deleted += OnFolderChanged;
             fileWatcher.Renamed += OnFolderChanged;
+
+            // Initialize hover events for Next and Previous buttons
+            NextButton.Opacity = 0;
+            PreviousButton.Opacity = 0;
+
+            NextButton.PointerEntered += (s, e) => NextButton.Opacity = 1;
+            NextButton.PointerExited += (s, e) => NextButton.Opacity = 0;
+
+            PreviousButton.PointerEntered += (s, e) => PreviousButton.Opacity = 1;
+            PreviousButton.PointerExited += (s, e) => PreviousButton.Opacity = 0;
 
             imageFiles = new List<string>();  // Initialize the image list
             currentIndex = -1;  // Initialize index to no selection
@@ -268,6 +279,20 @@ namespace App1
                 GC.Collect();
             }
         }
+
+        // Event handlers for mouse enter and leave events
+        private void Button_MouseEnter(object sender, PointerRoutedEventArgs e)
+        {
+            var button = sender as Button;
+            button.Visibility = Visibility.Visible;
+        }
+
+        private void Button_MouseLeave(object sender, PointerRoutedEventArgs e)
+        {
+            var button = sender as Button;
+            button.Visibility = Visibility.Collapsed;
+        }
+
 
         // Event for handling key presses (hotkeys)
         private void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
