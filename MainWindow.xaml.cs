@@ -233,6 +233,7 @@ namespace App1
                 if (!string.IsNullOrEmpty(destinationFolder))
                 {
                     string sourceFile = imageFiles[currentIndex];
+                    string sourceDirectory = Path.GetDirectoryName(sourceFile);  // Get the directory of the source file
                     string fileName = Path.GetFileNameWithoutExtension(sourceFile);
                     string fileExtension = Path.GetExtension(sourceFile);
                     string destinationPath = Path.Combine(destinationFolder, Path.GetFileName(sourceFile));
@@ -242,30 +243,25 @@ namespace App1
                         // Release the image resources before moving
                         ReleaseImageResources();
 
-                        // Check for file name conflict and add suffix if necessary
-                        int copyCount = 1;
-                        while (File.Exists(destinationPath))
+                        // Check if the source and destination folders are the same
+                        if (!sourceDirectory.Equals(destinationFolder, StringComparison.OrdinalIgnoreCase))
                         {
-                            copyCount++;
-                            destinationPath = Path.Combine(destinationFolder, $"{fileName} ({copyCount}){fileExtension}");
+                            // Check for file name conflict and add suffix if necessary
+                            int copyCount = 1;
+                            while (File.Exists(destinationPath))
+                            {
+                                copyCount++;
+                                destinationPath = Path.Combine(destinationFolder, $"{fileName} ({copyCount}){fileExtension}");
+                            }
+                        }
+                        else
+                        {
+                            DisplayImage(currentIndex);
                         }
 
                         // Move the file to the destination
                         File.Move(sourceFile, destinationPath);
                         PlaySound("ms-appx:///Assets/Sounds/move.wav");
-
-                        // Remove the file from the list and update the display
-                        imageFiles.RemoveAt(currentIndex);
-
-                        if (imageFiles.Count > 0)
-                        {
-                            if (currentIndex >= imageFiles.Count) currentIndex = imageFiles.Count - 1;
-                            DisplayImage(currentIndex);
-                        }
-                        else
-                        {
-                            SelectedImage.Source = null; // Clear image if no images are left
-                        }
 
                         // Force garbage collection after moving
                         GC.Collect();
