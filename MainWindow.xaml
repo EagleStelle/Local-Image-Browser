@@ -45,62 +45,71 @@
         </Border>
 
         <!-- Controls container, placed just above the hamburger button -->
-        <Border x:Name="ControlsContainer"
+        <Border x:Name="ControlsContainer" 
                 Grid.Row="1"
                 Visibility="Collapsed"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Bottom">
             <!-- Make space for the hamburger button below -->
             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <!-- Dynamic width -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Fixed width for switch button -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Dynamic width -->
+                </Grid.ColumnDefinitions>
 
-                <!-- Left side for folder selection -->
-                <StackPanel Orientation="Vertical" Grid.Column="0" HorizontalAlignment="Left" Margin="0,0,10,0">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                        <Button Content="Browse Source" 
-                            Width="200" 
+                <!-- Source folder controls -->
+                <StackPanel Orientation="Vertical" Grid.Column="0">
+                    <Button Content="Browse Source" 
                             Height="35" 
                             Click="BrowseImageFolder_Click" 
                             Background="#333333" 
-                            Foreground="White" />
-                        <TextBox x:Name="ImageFolderPath" 
-                             Width="400" 
+                            Foreground="White"
+                            HorizontalAlignment="Stretch"
+                            ToolTipService.ToolTip="Choose source folder" />
+                    <TextBox x:Name="ImageFolderPath" 
                              Height="35"
                              IsReadOnly="True"
                              Background="#2e2e2e" 
                              Foreground="White"
                              TextAlignment="Left"
                              VerticalAlignment="Center"
-                             Margin="5,0,0,0"/>
-                    </StackPanel>
+                             Margin="0,5,0,0"
+                             HorizontalAlignment="Stretch" />
+                </StackPanel>
 
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="Browse Destination" 
-                            Width="200" 
+                <!-- Switch button in the center -->
+                <Button Content="⇄" 
+                        Width="40" 
+                        Height="70" 
+                        Click="SwitchFolders_Click" 
+                        Background="#333333" 
+                        Foreground="White" 
+                        Margin="5,0,5,0"
+                        Grid.Column="1" 
+                        ToolTipService.ToolTip="Swap folders" />
+
+                <!-- Destination folder controls -->
+                <StackPanel Orientation="Vertical" Grid.Column="2">
+                    <Button Content="Browse Destination" 
                             Height="35" 
                             Click="BrowseDestinationFolder_Click" 
                             Background="#333333" 
-                            Foreground="White" />
-                        <TextBox x:Name="DestinationFolderPath" 
-                             Width="400" 
+                            Foreground="White"
+                            HorizontalAlignment="Stretch"
+                            ToolTipService.ToolTip="Choose destination folder" />
+                    <TextBox x:Name="DestinationFolderPath" 
                              Height="35"
                              IsReadOnly="True"
                              Background="#2e2e2e" 
                              Foreground="White" 
                              TextAlignment="Left"
                              VerticalAlignment="Center"
-                             Margin="5,0,0,0"/>
-                    </StackPanel>
-                </StackPanel>
-
-                <!-- Right side for Move button -->
-                <StackPanel Orientation="Horizontal" Grid.Column="2" HorizontalAlignment="Right">
-                    <Button Content="Move" 
-                        Width="100"
-                        HorizontalAlignment="Right"
-                        Margin="0,0,0,5"  
-                        Click="MoveImage_Click"
-                        Background="#333333" 
-                        Foreground="White" />
+                             Margin="0,5,0,0"
+                             HorizontalAlignment="Stretch" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -112,21 +121,39 @@
                 VerticalAlignment="Bottom">
             <Grid HorizontalAlignment="Stretch"
                   VerticalAlignment="Center">
-                <Button Content="☰"
-                        Width="40" 
-                        Height="30" 
-                        FontSize="12"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Center" 
-                        Margin="5,0,0,0" 
-                        Click="HamburgerButton_Click"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <!-- Hamburger Button -->
+                    <Button Content="☰"
+                            Width="40" 
+                            Height="30" 
+                            FontSize="12"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center" 
+                            Margin="5,0,0,0" 
+                            Click="HamburgerButton_Click"
+                            ToolTipService.ToolTip="Show configurations" />
+
+                    <!-- Move Button, styled like Hamburger -->
+                    <Button Content="📂"
+                            Width="40" 
+                            Height="30" 
+                            FontSize="12"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center" 
+                            Margin="5,0,0,0" 
+                            Click="MoveImage_Click"
+                            Background="#333333" 
+                            Foreground="White"
+                            ToolTipService.ToolTip="Move this image" />
+                </StackPanel>
 
                 <TextBlock x:Name="ImageFileName" 
                            HorizontalAlignment="Center" 
                            FontSize="18" 
                            Foreground="White"
                            TextAlignment="Center"
-                           DoubleTapped="ImageFileName_DoubleTapped" />
+                           DoubleTapped="ImageFileName_DoubleTapped" 
+                           ToolTipService.ToolTip="Double click to rename" />
 
                 <TextBox x:Name="RenameTextBox" 
                          HorizontalAlignment="Center" 
@@ -139,7 +166,13 @@
                            VerticalAlignment="Center" 
                            Foreground="White" 
                            Margin="0,0,5,0" 
-                           Grid.Column="2"/>
+                           Grid.Column="2"
+                           DoubleTapped="ImageCount_DoubleTapped" />
+                <TextBox x:Name="JumpToTextBox" 
+                         HorizontalAlignment="Right" 
+                         Visibility="Collapsed" 
+                         KeyDown="JumpToTextBox_KeyDown" 
+                         LostFocus="JumpToTextBox_LostFocus" />
             </Grid>
         </Border>
     </Grid>

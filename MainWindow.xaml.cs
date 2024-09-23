@@ -308,6 +308,59 @@ namespace App1
             }
         }
 
+        // Event for double-clicking the ImageCount (to jump to a specific image)
+        private void ImageCount_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            if (imageFiles.Count > 0)
+            {
+                // Set the TextBox to the current image index (1-based index)
+                JumpToTextBox.Text = (currentIndex + 1).ToString();
+
+                // Show the TextBox and hide the ImageCount TextBlock
+                JumpToTextBox.Visibility = Visibility.Visible;
+                JumpToTextBox.Focus(FocusState.Programmatic);  // Focus the TextBox for input
+                ImageCount.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        // Event handler for pressing 'Enter' after entering a number to jump to
+        private void JumpToTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                // Get the entered value
+                if (int.TryParse(JumpToTextBox.Text.Trim(), out int targetIndex))
+                {
+                    // Convert to 0-based index
+                    targetIndex -= 1;
+
+                    // Check if the target index is within the valid range
+                    if (targetIndex >= 0 && targetIndex < imageFiles.Count)
+                    {
+                        // Update the current index and display the corresponding image
+                        ReleaseImageResources();
+                        currentIndex = targetIndex;
+                        DisplayImage(currentIndex);
+
+                        // Update the ImageCount TextBlock
+                        ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
+                    }
+                }
+
+                // Hide the TextBox and show the ImageCount TextBlock
+                JumpToTextBox.Visibility = Visibility.Collapsed;
+                ImageCount.Visibility = Visibility.Visible;
+            }
+        }
+
+        // Event handler if the RenameTextBox loses focus (optional but ensures renaming completes)
+        private void JumpToTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            // Hide the RenameTextBox and show the ImageFileName TextBlock if the RenameTextBox loses focus
+            JumpToTextBox.Visibility = Visibility.Collapsed;
+            ImageCount.Visibility = Visibility.Visible;
+        }
+
         // Event for double-clicking the ImageFileName (to enable renaming)
         private void ImageFileName_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
@@ -376,6 +429,31 @@ namespace App1
             // Hide the RenameTextBox and show the ImageFileName TextBlock if the RenameTextBox loses focus
             RenameTextBox.Visibility = Visibility.Collapsed;
             ImageFileName.Visibility = Visibility.Visible;
+        }
+
+        private void SwitchFolders_Click(object sender, RoutedEventArgs e)
+        {
+            // Swap the paths of the source and destination folders
+            string temp = ImageFolderPath.Text;
+            ImageFolderPath.Text = DestinationFolderPath.Text;
+            DestinationFolderPath.Text = temp;
+
+            // Update the destination folder variable
+            destinationFolder = DestinationFolderPath.Text;
+
+            // Update the FileSystemWatcher to monitor the new source folder
+            if (!string.IsNullOrEmpty(ImageFolderPath.Text))
+            {
+                // Disable the watcher to avoid conflicts during switching
+                fileWatcher.EnableRaisingEvents = false;
+
+                // Set the new folder to watch
+                fileWatcher.Path = ImageFolderPath.Text;
+                fileWatcher.EnableRaisingEvents = true; // Re-enable the watcher
+
+                // Reload the images from the new source folder
+                LoadImagesFromFolder(ImageFolderPath.Text);
+            }
         }
 
         // Event handlers for mouse enter and leave events
