@@ -14,6 +14,8 @@ using Windows.Storage.Pickers;
 using Windows.UI.Popups;
 using Microsoft.UI.Xaml.Controls;
 using System.Threading.Tasks;
+using Microsoft.UI.Input;
+using Windows.UI.Core;
 
 namespace App1
 {
@@ -52,18 +54,8 @@ namespace App1
             currentIndex = -1;  // Initialize index to no selection
             destinationFolder = string.Empty;  // No folder selected initially
             mediaPlayer = new MediaPlayer();  // Initialize the MediaPlayer for sound
-
-            // Ensure the window is centered after it's activated
-            this.Activated += MainWindow_Activated;
         }
 
-        private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
-        {
-            // Unsubscribe the event to avoid multiple calls
-            this.Activated -= MainWindow_Activated;
-
-            CenterWindow();
-        }
         private void CenterWindow()
         {
             var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -320,6 +312,76 @@ namespace App1
             }
         }
 
+        // Event for double-clicking the ImageFileName (to enable renaming)
+        private void ImageFileName_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            if (currentIndex >= 0 && currentIndex < imageFiles.Count)
+            {
+                // Get the full file path and file name
+                string fullFileName = Path.GetFileName(imageFiles[currentIndex]);
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fullFileName);  // Get name without extension
+
+                // Show the filename (without the extension) in the RenameTextBox
+                RenameTextBox.Text = fileNameWithoutExtension;
+                RenameTextBox.Visibility = Visibility.Visible;  // Make the textbox visible for renaming
+                RenameTextBox.Focus(FocusState.Programmatic);  // Focus on the textbox for input
+
+                // Hide the ImageFileName TextBlock
+                ImageFileName.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        // Event handler for pressing 'Enter' after renaming
+        private void RenameTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter && currentIndex >= 0 && currentIndex < imageFiles.Count)
+            {
+                string newFileName = RenameTextBox.Text.Trim();  // Get the new name from the textbox
+                if (!string.IsNullOrEmpty(newFileName))
+                {
+                    // Get the current file path and its extension
+                    string currentFilePath = imageFiles[currentIndex];
+                    string currentDirectory = Path.GetDirectoryName(currentFilePath);
+                    string fileExtension = Path.GetExtension(currentFilePath);  // Get the file extension
+
+                    // Combine the new file name with the existing extension
+                    string newFilePath = Path.Combine(currentDirectory, newFileName + fileExtension);
+
+                    try
+                    {
+                        // Rename the file on the file system
+                        File.Move(currentFilePath, newFilePath);
+
+                        // Update the image file list with the new file path
+                        imageFiles[currentIndex] = newFilePath;
+
+                        // Update the displayed file name and hide the RenameTextBox
+                        ImageFileName.Text = Path.GetFileName(newFilePath);
+                        RenameTextBox.Visibility = Visibility.Collapsed;
+                    }
+                    catch (IOException ex)
+                    {
+                        // Handle errors, like if the file already exists with the new name
+                        var dialog = new MessageDialog($"Error renaming the file: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    // If no valid input is provided, hide the RenameTextBox and show ImageFileName again
+                    RenameTextBox.Visibility = Visibility.Collapsed;
+                    ImageFileName.Visibility = Visibility.Visible;
+                }
+            }
+        }
+
+        // Event handler if the RenameTextBox loses focus (optional but ensures renaming completes)
+        private void RenameTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            // Hide the RenameTextBox and show the ImageFileName TextBlock if the RenameTextBox loses focus
+            RenameTextBox.Visibility = Visibility.Collapsed;
+            ImageFileName.Visibility = Visibility.Visible;
+        }
+
         // Event handlers for mouse enter and leave events
         private void Button_MouseEnter(object sender, PointerRoutedEventArgs e)
         {
@@ -337,17 +399,38 @@ namespace App1
         // Event for handling key presses (hotkeys)
         private void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == Windows.System.VirtualKey.Left || e.Key == Windows.System.VirtualKey.A)
+            // Check if Alt is pressed using InputKeyboardSource
+            var isCtrlPressed = InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down);
+
+            // Arrow keys should work without Alt
+            if (e.Key == Windows.System.VirtualKey.Left)
             {
-                PreviousImage_Click(sender, e);  // Trigger Previous button when Left Arrow or 'A' is pressed
+                PreviousImage_Click(sender, e);  // Trigger Previous button when Left Arrow is pressed
             }
-            else if (e.Key == Windows.System.VirtualKey.Right || e.Key == Windows.System.VirtualKey.D)
+            else if (e.Key == Windows.System.VirtualKey.Right)
             {
-                NextImage_Click(sender, e);  // Trigger Next button when Right Arrow or 'D' is pressed
+                NextImage_Click(sender, e);  // Trigger Next button when Right Arrow is pressed
             }
-            else if (e.Key == Windows.System.VirtualKey.Down || e.Key == Windows.System.VirtualKey.S)
+            else if (e.Key == Windows.System.VirtualKey.Down)
             {
-                MoveImage_Click(sender, e);  // Trigger Move button when Down Arrow or 'S' is pressed
+                MoveImage_Click(sender, e);  // Trigger Move button when Down Arrow is pressed
+            }
+
+            // A, S, D keys should only work with Alt
+            else if (isCtrlPressed)
+            {
+                if (e.Key == Windows.System.VirtualKey.A)
+                {
+                    PreviousImage_Click(sender, e);  // Trigger Previous button when Alt + A is pressed
+                }
+                else if (e.Key == Windows.System.VirtualKey.D)
+                {
+                    NextImage_Click(sender, e);  // Trigger Next button when Alt + D is pressed
+                }
+                else if (e.Key == Windows.System.VirtualKey.S)
+                {
+                    MoveImage_Click(sender, e);  // Trigger Move button when Alt + S is pressed
+                }
             }
         }
     }

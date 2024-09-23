@@ -125,7 +125,14 @@
                            HorizontalAlignment="Center" 
                            FontSize="18" 
                            Foreground="White"
-                           TextAlignment="Center" />
+                           TextAlignment="Center"
+                           DoubleTapped="ImageFileName_DoubleTapped" />
+
+                <TextBox x:Name="RenameTextBox" 
+                         HorizontalAlignment="Center" 
+                         Visibility="Collapsed" 
+                         KeyDown="RenameTextBox_KeyDown" 
+                         LostFocus="RenameTextBox_LostFocus" />
 
                 <TextBlock x:Name="ImageCount" 
                            HorizontalAlignment="Right" 
