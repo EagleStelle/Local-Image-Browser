@@ -25,17 +25,17 @@
                 <TextBlock x:Name="ImageFileName" 
                    HorizontalAlignment="Center" 
                    VerticalAlignment="Top" 
-                   Margin="0,10,0,0" 
                    FontSize="18" 
                    Foreground="White"
-                   Opacity="0.6"
-                   Padding="5"
                    TextAlignment="Center" />
 
                 <!-- Image display -->
-                <Image x:Name="SelectedImage" Stretch="Uniform" />
+                <Image x:Name="SelectedImage" 
+                       Stretch="Uniform" 
+                       Margin="0,30,0,0"/>
             </Grid>
         </Border>
+
 
 
         <!-- Bottom section with buttons and textboxes -->
