@@ -13,6 +13,7 @@ using Windows.Media.Playback;
 using Windows.Storage.Pickers;
 using Windows.UI.Popups;
 using Microsoft.UI.Xaml.Controls;
+using System.Threading.Tasks;
 
 namespace App1
 {
@@ -134,7 +135,22 @@ namespace App1
             {
                 if (!string.IsNullOrEmpty(ImageFolderPath.Text))
                 {
-                    LoadImagesFromFolder(ImageFolderPath.Text);
+                    // Retry logic to wait for file access
+                    const int maxRetries = 5;
+                    const int delay = 500; // in milliseconds
+
+                    for (int i = 0; i < maxRetries; i++)
+                    {
+                        try
+                        {
+                            LoadImagesFromFolder(ImageFolderPath.Text);
+                            break;  // If successful, break out of the loop
+                        }
+                        catch (IOException)
+                        {
+                            Task.Delay(delay).Wait();  // Wait and retry
+                        }
+                    }
                 }
             });
         }
@@ -160,8 +176,14 @@ namespace App1
             }
             else
             {
-                var dialog = new MessageDialog("No images found in the selected folder.");
-                fileWatcher.EnableRaisingEvents = false; // Disable the watcher if no images
+                // No images found, reset to a blank state
+                SelectedImage.Source = null;  // Clear the displayed image
+                ImageFileName.Text = string.Empty;  // Clear the file name display
+                ImageCount.Text = "0 / 0";  // Update image count display
+                currentIndex = -1;  // Reset the index
+
+                // Disable file watcher since there's nothing to monitor
+                fileWatcher.EnableRaisingEvents = false;
             }
         }
 
@@ -223,31 +245,38 @@ namespace App1
                 if (!string.IsNullOrEmpty(destinationFolder))
                 {
                     string sourceFile = imageFiles[currentIndex];
-                    string fileName = Path.GetFileName(sourceFile);
-                    string destinationPath = Path.Combine(destinationFolder, fileName);
+                    string fileName = Path.GetFileNameWithoutExtension(sourceFile);
+                    string fileExtension = Path.GetExtension(sourceFile);
+                    string destinationPath = Path.Combine(destinationFolder, Path.GetFileName(sourceFile));
 
                     try
                     {
                         // Release the image resources before moving
                         ReleaseImageResources();
 
-                        // Now move the file
+                        // Check for file name conflict and add suffix if necessary
+                        int copyCount = 1;
+                        while (File.Exists(destinationPath))
+                        {
+                            copyCount++;
+                            destinationPath = Path.Combine(destinationFolder, $"{fileName} ({copyCount}){fileExtension}");
+                        }
+
+                        // Move the file to the destination
                         File.Move(sourceFile, destinationPath);
                         PlaySound("ms-appx:///Assets/Sounds/move.wav");
 
-                        // Play a success sound (implementation dependent on available audio APIs)
-
-                        // Remove the file from the list
+                        // Remove the file from the list and update the display
                         imageFiles.RemoveAt(currentIndex);
 
                         if (imageFiles.Count > 0)
                         {
                             if (currentIndex >= imageFiles.Count) currentIndex = imageFiles.Count - 1;
-                            DisplayImage(currentIndex);  // Display the next image
+                            DisplayImage(currentIndex);
                         }
                         else
                         {
-                            SelectedImage.Source = null;  // Clear the image display if no images left
+                            SelectedImage.Source = null; // Clear image if no images are left
                         }
 
                         // Force garbage collection after moving
