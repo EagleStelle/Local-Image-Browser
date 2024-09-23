@@ -345,6 +345,10 @@ namespace App1
                         // Update the ImageCount TextBlock
                         ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
                     }
+                    else
+                    {
+                        PlaySound("ms-appx:///Assets/Sounds/error.wav");
+                    }
                 }
 
                 // Hide the TextBox and show the ImageCount TextBlock

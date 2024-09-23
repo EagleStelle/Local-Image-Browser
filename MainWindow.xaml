@@ -133,7 +133,7 @@
                             Click="HamburgerButton_Click"
                             ToolTipService.ToolTip="Show configurations" />
 
-                    <!-- Move Button, styled like Hamburger -->
+                    <!-- Move Button -->
                     <Button Content="📂"
                             Width="40" 
                             Height="30" 
@@ -170,6 +170,7 @@
                            DoubleTapped="ImageCount_DoubleTapped" />
                 <TextBox x:Name="JumpToTextBox" 
                          HorizontalAlignment="Right" 
+                         TextAlignment="Center"
                          Visibility="Collapsed" 
                          KeyDown="JumpToTextBox_KeyDown" 
                          LostFocus="JumpToTextBox_LostFocus" />
