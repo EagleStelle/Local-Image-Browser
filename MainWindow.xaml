@@ -36,8 +36,6 @@
             </Grid>
         </Border>
 
-
-
         <!-- Bottom section with buttons and textboxes -->
         <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10">
             <Grid.ColumnDefinitions>
