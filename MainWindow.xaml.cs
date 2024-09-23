@@ -163,7 +163,6 @@ namespace App1
                                file.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
                 .ToList();
-
             if (imageFiles.Count > 0)
             {
                 currentIndex = 0;  // Start with the first image
@@ -172,18 +171,15 @@ namespace App1
 
                 // Set the watcher to monitor the selected folder
                 fileWatcher.Path = folderPath;
-                fileWatcher.EnableRaisingEvents = true; // Enable the watcher
+                fileWatcher.EnableRaisingEvents = true;
             }
             else
             {
                 // No images found, reset to a blank state
                 SelectedImage.Source = null;  // Clear the displayed image
                 ImageFileName.Text = string.Empty;  // Clear the file name display
-                ImageCount.Text = "0 / 0";  // Update image count display
+                ImageCount.Text = string.Empty;  // Clear image count display
                 currentIndex = -1;  // Reset the index
-
-                // Disable file watcher since there's nothing to monitor
-                fileWatcher.EnableRaisingEvents = false;
             }
         }
 
