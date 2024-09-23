@@ -21,10 +21,20 @@ namespace App1
         private int currentIndex;  // Track the current image index
         private string destinationFolder;  // Hold the destination folder path
         private MediaPlayer mediaPlayer;  // MediaPlayer for sound playback
+        private FileSystemWatcher fileWatcher; // File watcher to monitor folder changes
 
         public MainWindow()
         {
             this.InitializeComponent();
+
+            // Initialize FileSystemWatcher with default values
+            fileWatcher = new FileSystemWatcher();
+            fileWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
+            fileWatcher.Filter = "*.*";
+            fileWatcher.Changed += OnFolderChanged;
+            fileWatcher.Created += OnFolderChanged;
+            fileWatcher.Deleted += OnFolderChanged;
+            fileWatcher.Renamed += OnFolderChanged;
 
             imageFiles = new List<string>();  // Initialize the image list
             currentIndex = -1;  // Initialize index to no selection
@@ -105,6 +115,19 @@ namespace App1
             }
         }
 
+        // This method is called when any file change occurs in the folder
+        private void OnFolderChanged(object sender, FileSystemEventArgs e)
+        {
+            // Ensure UI updates are made on the main thread
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (!string.IsNullOrEmpty(ImageFolderPath.Text))
+                {
+                    LoadImagesFromFolder(ImageFolderPath.Text);
+                }
+            });
+        }
+
         // Load all image files from the selected folder
         private void LoadImagesFromFolder(string folderPath)
         {
@@ -118,10 +141,15 @@ namespace App1
             {
                 currentIndex = 0;  // Start with the first image
                 DisplayImage(currentIndex);
+
+                // Set the watcher to monitor the selected folder
+                fileWatcher.Path = folderPath;
+                fileWatcher.EnableRaisingEvents = true; // Enable the watcher
             }
             else
             {
                 var dialog = new MessageDialog("No images found in the selected folder.");
+                fileWatcher.EnableRaisingEvents = false; // Disable the watcher if no images
             }
         }
 
@@ -153,6 +181,9 @@ namespace App1
             if (index >= 0 && index < imageFiles.Count)
             {
                 string selectedImagePath = imageFiles[index];
+
+                // Display the file name on top
+                ImageFileName.Text = Path.GetFileName(selectedImagePath);
 
                 // Load the image into a MemoryStream to avoid file lock
                 using (FileStream fs = new FileStream(selectedImagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
