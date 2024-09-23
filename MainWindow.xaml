@@ -12,23 +12,15 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Image display area -->
         <Border Background="#2e2e2e" Grid.Row="0" Grid.ColumnSpan="3" Margin="10">
             <Grid>
-                <!-- File name display -->
-                <TextBlock x:Name="ImageFileName" 
-                           HorizontalAlignment="Center" 
-                           VerticalAlignment="Top" 
-                           FontSize="18" 
-                           Foreground="White"
-                           TextAlignment="Center" />
-
                 <!-- Image display -->
                 <Image x:Name="SelectedImage" 
-                       Stretch="Uniform" 
-                       Margin="0,30,0,0"/>
+                       Stretch="Uniform"/>
 
                 <!-- Previous Button on the left side -->
                 <Button x:Name="PreviousButton"
@@ -53,16 +45,13 @@
         </Border>
 
         <!-- Controls container, placed just above the hamburger button -->
-        <StackPanel x:Name="ControlsContainer"
-                VerticalAlignment="Bottom"
-                Margin="0,60,0,0">
+        <Border x:Name="ControlsContainer"
+                Grid.Row="1"
+                Visibility="Collapsed"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Bottom">
             <!-- Make space for the hamburger button below -->
             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
 
                 <!-- Left side for folder selection -->
                 <StackPanel Orientation="Vertical" Grid.Column="0" HorizontalAlignment="Left" Margin="0,0,10,0">
@@ -74,7 +63,7 @@
                             Background="#333333" 
                             Foreground="White" />
                         <TextBox x:Name="ImageFolderPath" 
-                             Width="300" 
+                             Width="400" 
                              Height="35"
                              IsReadOnly="True"
                              Background="#2e2e2e" 
@@ -92,7 +81,7 @@
                             Background="#333333" 
                             Foreground="White" />
                         <TextBox x:Name="DestinationFolderPath" 
-                             Width="300" 
+                             Width="400" 
                              Height="35"
                              IsReadOnly="True"
                              Background="#2e2e2e" 
@@ -114,24 +103,37 @@
                         Foreground="White" />
                 </StackPanel>
             </Grid>
-        </StackPanel>
+        </Border>
 
         <!-- Hamburger button stack panel at the very bottom -->
         <Border Grid.Row="2"
                 Background="#333333" 
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Bottom">
-            <StackPanel Orientation="Horizontal" 
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Center">
+            <Grid HorizontalAlignment="Stretch"
+                  VerticalAlignment="Center">
                 <Button Content="☰"
                         Width="40" 
                         Height="30" 
                         FontSize="12"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center" 
+                        Margin="5,0,0,0" 
                         Click="HamburgerButton_Click"/>
-            </StackPanel>
+
+                <TextBlock x:Name="ImageFileName" 
+                           HorizontalAlignment="Center" 
+                           FontSize="18" 
+                           Foreground="White"
+                           TextAlignment="Center" />
+
+                <TextBlock x:Name="ImageCount" 
+                           HorizontalAlignment="Right" 
+                           VerticalAlignment="Center" 
+                           Foreground="White" 
+                           Margin="0,0,5,0" 
+                           Grid.Column="2"/>
+            </Grid>
         </Border>
     </Grid>
 </Window>

@@ -152,6 +152,7 @@ namespace App1
             {
                 currentIndex = 0;  // Start with the first image
                 DisplayImage(currentIndex);
+                ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
 
                 // Set the watcher to monitor the selected folder
                 fileWatcher.Path = folderPath;
@@ -172,6 +173,7 @@ namespace App1
                 ReleaseImageResources();  // Release current image resources
                 currentIndex = (currentIndex + 1) % imageFiles.Count;  // Loop to the first image when reaching the end
                 DisplayImage(currentIndex);
+                ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
             }
         }
 
@@ -183,6 +185,7 @@ namespace App1
                 ReleaseImageResources();  // Release current image resources
                 currentIndex = (currentIndex - 1 + imageFiles.Count) % imageFiles.Count;  // Loop to the last image when going before the first
                 DisplayImage(currentIndex);
+                ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
             }
         }
 
