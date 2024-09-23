@@ -9,12 +9,6 @@
     Title="Local Image Browser">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" KeyDown="Grid_KeyDown">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
-
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
@@ -58,24 +52,28 @@
             </Grid>
         </Border>
 
-        <!-- Bottom section with buttons and textboxes -->
-        <Grid Grid.Row="1" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <!-- Controls container, placed just above the hamburger button -->
+        <StackPanel x:Name="ControlsContainer"
+                VerticalAlignment="Bottom"
+                Margin="0,60,0,0">
+            <!-- Make space for the hamburger button below -->
+            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <!-- Left side for folder selection -->
-            <StackPanel Orientation="Vertical" Grid.Column="0" HorizontalAlignment="Left" Margin="0,0,10,0">
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                    <Button Content="Browse Source" 
+                <!-- Left side for folder selection -->
+                <StackPanel Orientation="Vertical" Grid.Column="0" HorizontalAlignment="Left" Margin="0,0,10,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                        <Button Content="Browse Source" 
                             Width="200" 
                             Height="35" 
                             Click="BrowseImageFolder_Click" 
                             Background="#333333" 
                             Foreground="White" />
-                    <TextBox x:Name="ImageFolderPath" 
+                        <TextBox x:Name="ImageFolderPath" 
                              Width="300" 
                              Height="35"
                              IsReadOnly="True"
@@ -84,16 +82,16 @@
                              TextAlignment="Left"
                              VerticalAlignment="Center"
                              Margin="5,0,0,0"/>
-                </StackPanel>
+                    </StackPanel>
 
-                <StackPanel Orientation="Horizontal">
-                    <Button Content="Browse Destination" 
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Browse Destination" 
                             Width="200" 
                             Height="35" 
                             Click="BrowseDestinationFolder_Click" 
                             Background="#333333" 
                             Foreground="White" />
-                    <TextBox x:Name="DestinationFolderPath" 
+                        <TextBox x:Name="DestinationFolderPath" 
                              Width="300" 
                              Height="35"
                              IsReadOnly="True"
@@ -102,19 +100,38 @@
                              TextAlignment="Left"
                              VerticalAlignment="Center"
                              Margin="5,0,0,0"/>
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
 
-            <!-- Right side for Move button -->
-            <StackPanel Orientation="Horizontal" Grid.Column="2" HorizontalAlignment="Right">
-                <Button Content="Move" 
+                <!-- Right side for Move button -->
+                <StackPanel Orientation="Horizontal" Grid.Column="2" HorizontalAlignment="Right">
+                    <Button Content="Move" 
                         Width="100"
                         HorizontalAlignment="Right"
                         Margin="0,0,0,5"  
                         Click="MoveImage_Click"
                         Background="#333333" 
                         Foreground="White" />
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+
+        <!-- Hamburger button stack panel at the very bottom -->
+        <Border Grid.Row="2"
+                Background="#333333" 
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Bottom">
+            <StackPanel Orientation="Horizontal" 
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center">
+                <Button Content="☰"
+                        Width="40" 
+                        Height="30" 
+                        FontSize="12"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center" 
+                        Click="HamburgerButton_Click"/>
             </StackPanel>
-        </Grid>
+        </Border>
     </Grid>
 </Window>

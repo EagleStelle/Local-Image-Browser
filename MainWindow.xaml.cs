@@ -280,6 +280,18 @@ namespace App1
             }
         }
 
+        private void HamburgerButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ControlsContainer.Visibility == Visibility.Collapsed)
+            {
+                ControlsContainer.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ControlsContainer.Visibility = Visibility.Collapsed;
+            }
+        }
+
         // Event handlers for mouse enter and leave events
         private void Button_MouseEnter(object sender, PointerRoutedEventArgs e)
         {
