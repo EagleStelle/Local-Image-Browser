@@ -97,41 +97,65 @@ namespace App1
                 var items = await e.DataView.GetStorageItemsAsync();
                 if (items.Count > 0)
                 {
+                    var dropPosition = e.GetPosition(MainGrid).X;
+                    var gridWidth = MainGrid.ActualWidth;
                     var storageItem = items[0];
-                    if (storageItem.IsOfType(StorageItemTypes.Folder))
-                    {
-                        // Folder dropped
-                        ImageFolderPath.Text = storageItem.Path;
-                        LoadImagesFromFolder(storageItem.Path);
-                    }
-                    else if (storageItem.IsOfType(StorageItemTypes.File))
-                    {
-                        // Image file dropped
-                        var fileExtension = Path.GetExtension(storageItem.Name).ToLower();
-                        if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png")
-                        {
-                            var folderPath = Path.GetDirectoryName(storageItem.Path);
-                            ImageFolderPath.Text = folderPath;
-                            LoadImagesFromFolder(folderPath);
 
-                            // Display the dropped image
-                            var imagePath = storageItem.Path;
-                            currentIndex = imageFiles.IndexOf(imagePath);
-                            if (currentIndex != -1)
+                    if (dropPosition <= gridWidth / 2)
+                    {
+                        // Dragged to the left side (Source)
+                        if (storageItem.IsOfType(StorageItemTypes.Folder))
+                        {
+                            // Folder dropped as source
+                            ImageFolderPath.Text = storageItem.Path; // Assuming you have a TextBox for source path
+                            LoadImagesFromFolder(storageItem.Path);   // Load images from the folder
+                        }
+                        else if (storageItem.IsOfType(StorageItemTypes.File))
+                        {
+                            // Image file dropped as source
+                            var fileExtension = Path.GetExtension(storageItem.Name).ToLower();
+                            if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png")
                             {
-                                DisplayImage(currentIndex);
-                                ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
+                                var folderPath = Path.GetDirectoryName(storageItem.Path);
+                                ImageFolderPath.Text = folderPath; // Display the source folder path
+                                LoadImagesFromFolder(folderPath);
+
+                                // Display the dropped image
+                                var imagePath = storageItem.Path;
+                                currentIndex = imageFiles.IndexOf(imagePath);
+                                if (currentIndex != -1)
+                                {
+                                    DisplayImage(currentIndex);
+                                    ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
+                                }
                             }
+                        }
+                    }
+                    else
+                    {
+                        // Dragged to the right side (Destination)
+                        if (storageItem.IsOfType(StorageItemTypes.Folder))
+                        {
+                            destinationFolder = storageItem.Path; // Set the destination folder
+                            DestinationFolderPath.Text = destinationFolder; // Display the destination path in the TextBox
+                        }
+                        else if (storageItem.IsOfType(StorageItemTypes.File))
+                        {
+                            // Image file dropped as destination
+                            var folderPath = Path.GetDirectoryName(storageItem.Path);
+                            destinationFolder = folderPath;
+                            DestinationFolderPath.Text = destinationFolder; // Display the destination path in the TextBox
                         }
                     }
                 }
             }
         }
-
         private void OnDragOver(object sender, Microsoft.UI.Xaml.DragEventArgs e)
         {
             e.AcceptedOperation = DataPackageOperation.Copy;
-            e.DragUIOverride.Caption = "Drop to load folder or image";
+            var dropPosition = e.GetPosition(MainGrid).X;
+            var gridWidth = MainGrid.ActualWidth;
+            e.DragUIOverride.Caption = dropPosition <= gridWidth / 2 ? "Drop for Source" : "Drop for Destination";
             e.DragUIOverride.IsCaptionVisible = true;
             e.DragUIOverride.IsContentVisible = true;
         }
