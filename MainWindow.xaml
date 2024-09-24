@@ -150,6 +150,19 @@
                             Background="#333333" 
                             Foreground="White"
                             ToolTipService.ToolTip="Move this image" />
+
+                    <!-- Delete Button -->
+                    <Button Content="🗑"
+                            Width="40" 
+                            Height="30" 
+                            FontSize="12"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center" 
+                            Margin="5,0,0,0" 
+                            Click="DeleteImage_Click"
+                            Background="#333333" 
+                            Foreground="White"
+                            ToolTipService.ToolTip="Delete this image" />
                 </StackPanel>
 
                 <TextBlock x:Name="ImageFileName" 

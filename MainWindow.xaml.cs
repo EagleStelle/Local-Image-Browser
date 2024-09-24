@@ -12,12 +12,13 @@ using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.Storage.Pickers;
 using Windows.UI.Popups;
-using Microsoft.UI.Xaml.Controls;
 using System.Threading.Tasks;
 using Microsoft.UI.Input;
 using Windows.UI.Core;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
+using Windows.System;
+using Microsoft.UI.Xaml.Controls;
 
 namespace App1
 {
@@ -63,33 +64,66 @@ namespace App1
             mediaPlayer = new MediaPlayer();  // Initialize the MediaPlayer for sound
         }
 
-        private void CenterWindow()
+        // Event for the 'Browse Image Folder' button click
+        private async void BrowseImageFolder_Click(object sender, RoutedEventArgs e)
         {
-            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            var windowId = Win32Interop.GetWindowIdFromWindow(hWnd);
-            var appWindow = AppWindow.GetFromWindowId(windowId);
+            FolderPicker folderPicker = new FolderPicker();
+            folderPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+            folderPicker.FileTypeFilter.Add("*");
 
-            var displayArea = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary);
-            var centerX = (displayArea.WorkArea.Width - appWindow.Size.Width) / 2;
-            var centerY = (displayArea.WorkArea.Height - appWindow.Size.Height) / 2;
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);  // Get HWND for WinUI 3 compatibility
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
 
-            appWindow.Move(new PointInt32(centerX, centerY));
-        }
-
-        // Play sound using MediaPlayer
-        private void PlaySound(string soundFilePath)
-        {
-            try
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder != null)
             {
-                mediaPlayer.Source = MediaSource.CreateFromUri(new Uri(soundFilePath));
-                mediaPlayer.Play();
-            }
-            catch (Exception ex)
-            {
-                var dialog = new MessageDialog($"Error playing sound: {ex.Message}");
+                ImageFolderPath.Text = folder.Path;  // Update the Image Folder Path textbox
+                LoadImagesFromFolder(folder.Path);  // Load all images from the selected folder
             }
         }
+        // Event for the switching source and destination
+        private void SwitchFolders_Click(object sender, RoutedEventArgs e)
+        {
+            // Swap the paths of the source and destination folders
+            string temp = ImageFolderPath.Text;
+            ImageFolderPath.Text = DestinationFolderPath.Text;
+            DestinationFolderPath.Text = temp;
 
+            // Update the destination folder variable
+            destinationFolder = DestinationFolderPath.Text;
+
+            // Update the FileSystemWatcher to monitor the new source folder
+            if (!string.IsNullOrEmpty(ImageFolderPath.Text))
+            {
+                // Disable the watcher to avoid conflicts during switching
+                fileWatcher.EnableRaisingEvents = false;
+
+                // Set the new folder to watch
+                fileWatcher.Path = ImageFolderPath.Text;
+                fileWatcher.EnableRaisingEvents = true; // Re-enable the watcher
+
+                // Reload the images from the new source folder
+                LoadImagesFromFolder(ImageFolderPath.Text);
+            }
+        }
+        // Event for the 'Browse Destination Folder' button click
+        private async void BrowseDestinationFolder_Click(object sender, RoutedEventArgs e)
+        {
+            FolderPicker folderPicker = new FolderPicker();
+            folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+            folderPicker.FileTypeFilter.Add("*");
+
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);  // Get HWND for WinUI 3 compatibility
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                DestinationFolderPath.Text = folder.Path;
+                destinationFolder = folder.Path;  // Set the destination folder
+            }
+        }
+        // Drag and Drop Function
         private async void OnDrop(object sender, Microsoft.UI.Xaml.DragEventArgs e)
         {
             if (e.DataView.Contains(StandardDataFormats.StorageItems))
@@ -161,70 +195,6 @@ namespace App1
             e.DragUIOverride.IsContentVisible = true;
         }
 
-        // Event for the 'Browse Image Folder' button click
-        private async void BrowseImageFolder_Click(object sender, RoutedEventArgs e)
-        {
-            FolderPicker folderPicker = new FolderPicker();
-            folderPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-            folderPicker.FileTypeFilter.Add("*");
-
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);  // Get HWND for WinUI 3 compatibility
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
-
-            var folder = await folderPicker.PickSingleFolderAsync();
-            if (folder != null)
-            {
-                ImageFolderPath.Text = folder.Path;  // Update the Image Folder Path textbox
-                LoadImagesFromFolder(folder.Path);  // Load all images from the selected folder
-            }
-        }
-
-        // Event for the 'Browse Destination Folder' button click
-        private async void BrowseDestinationFolder_Click(object sender, RoutedEventArgs e)
-        {
-            FolderPicker folderPicker = new FolderPicker();
-            folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-            folderPicker.FileTypeFilter.Add("*");
-
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);  // Get HWND for WinUI 3 compatibility
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
-
-            var folder = await folderPicker.PickSingleFolderAsync();
-            if (folder != null)
-            {
-                DestinationFolderPath.Text = folder.Path;
-                destinationFolder = folder.Path;  // Set the destination folder
-            }
-        }
-
-        // This method is called when any file change occurs in the folder
-        private void OnFolderChanged(object sender, FileSystemEventArgs e)
-        {
-            // Ensure UI updates are made on the main thread
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                if (!string.IsNullOrEmpty(ImageFolderPath.Text))
-                {
-                    // Retry logic to wait for file access
-                    const int maxRetries = 5;
-                    const int delay = 500; // in milliseconds
-
-                    for (int i = 0; i < maxRetries; i++)
-                    {
-                        try
-                        {
-                            LoadImagesFromFolder(ImageFolderPath.Text);
-                            break;  // If successful, break out of the loop
-                        }
-                        catch (IOException)
-                        {
-                            Task.Delay(delay).Wait();  // Wait and retry
-                        }
-                    }
-                }
-            });
-        }
-
         // Load all image files from the selected folder
         private void LoadImagesFromFolder(string folderPath)
         {
@@ -253,7 +223,61 @@ namespace App1
                 currentIndex = -1;  // Reset the index
             }
         }
+        // This method is called when any file change occurs in the folder
+        private void OnFolderChanged(object sender, FileSystemEventArgs e)
+        {
+            // Ensure UI updates are made on the main thread
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (!string.IsNullOrEmpty(ImageFolderPath.Text))
+                {
+                    // Retry logic to wait for file access
+                    const int maxRetries = 5;
+                    const int delay = 500; // in milliseconds
 
+                    for (int i = 0; i < maxRetries; i++)
+                    {
+                        try
+                        {
+                            LoadImagesFromFolder(ImageFolderPath.Text);
+                            break;  // If successful, break out of the loop
+                        }
+                        catch (IOException)
+                        {
+                            Task.Delay(delay).Wait();  // Wait and retry
+                        }
+                    }
+                }
+            });
+        }
+        // Method to display an image at the given index
+        private void DisplayImage(int index)
+        {
+            if (index >= 0 && index < imageFiles.Count)
+            {
+                string selectedImagePath = imageFiles[index];
+
+                // Display the file name on top
+                ImageFileName.Text = Path.GetFileName(selectedImagePath);
+
+                // Load the image into a MemoryStream to avoid file lock
+                using (FileStream fs = new FileStream(selectedImagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    BitmapImage bitmap = new BitmapImage();
+                    bitmap.SetSource(fs.AsRandomAccessStream());
+
+                    SelectedImage.Source = bitmap;  // Display the selected image
+                }
+
+                // Update image count display without modifying currentIndex
+                ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
+
+                // Force garbage collection to clean up memory
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+            }
+        }
         // Event for the 'Next' button
         private void NextImage_Click(object sender, RoutedEventArgs e)
         {
@@ -265,7 +289,6 @@ namespace App1
                 ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
             }
         }
-
         // Event for the 'Previous' button
         private void PreviousImage_Click(object sender, RoutedEventArgs e)
         {
@@ -278,49 +301,18 @@ namespace App1
             }
         }
 
-        // Method to display an image at the given index
-        private void DisplayImage(int index)
+        // Bar Buttons
+        private void HamburgerButton_Click(object sender, RoutedEventArgs e)
         {
-            if (index >= 0 && index < imageFiles.Count)
+            if (ControlsContainer.Visibility == Visibility.Collapsed)
             {
-                string selectedImagePath = imageFiles[index];
-
-                // Display the file name on top
-                ImageFileName.Text = Path.GetFileName(selectedImagePath);
-
-                var fileExtension = Path.GetExtension(selectedImagePath).ToLower();
-
-                if (fileExtension == ".gif")
-                {
-                    // GIF handling
-                    var gifBitmap = new BitmapImage();
-                    using (var stream = File.OpenRead(selectedImagePath))
-                    {
-                        gifBitmap.SetSource(stream.AsRandomAccessStream());
-                    }
-
-                    SelectedImage.Source = gifBitmap;
-                }
-                else
-                {
-                    // For other image types, display as a static bitmap
-                    using (FileStream fs = new FileStream(selectedImagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    {
-                        BitmapImage bitmap = new BitmapImage();
-                        bitmap.SetSource(fs.AsRandomAccessStream());
-
-                        SelectedImage.Source = bitmap;  // Display the selected image
-                    }
-                }
-
-                // Force garbage collection to clean up memory
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
+                ControlsContainer.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ControlsContainer.Visibility = Visibility.Collapsed;
             }
         }
-
-        // Event for the 'Move' button
         private async void MoveImage_Click(object sender, RoutedEventArgs e)
         {
             if (currentIndex >= 0 && currentIndex < imageFiles.Count)
@@ -328,7 +320,7 @@ namespace App1
                 if (!string.IsNullOrEmpty(destinationFolder))
                 {
                     string sourceFile = imageFiles[currentIndex];
-                    string sourceDirectory = Path.GetDirectoryName(sourceFile);  // Get the directory of the source file
+                    string sourceDirectory = Path.GetDirectoryName(sourceFile);
                     string fileName = Path.GetFileNameWithoutExtension(sourceFile);
                     string fileExtension = Path.GetExtension(sourceFile);
                     string destinationPath = Path.Combine(destinationFolder, Path.GetFileName(sourceFile));
@@ -337,6 +329,9 @@ namespace App1
                     {
                         // Release the image resources before moving
                         ReleaseImageResources();
+
+                        // Disable FileSystemWatcher before moving the file
+                        fileWatcher.EnableRaisingEvents = false;
 
                         // Check if the source and destination folders are the same
                         if (!sourceDirectory.Equals(destinationFolder, StringComparison.OrdinalIgnoreCase))
@@ -348,14 +343,33 @@ namespace App1
                                 copyCount++;
                                 destinationPath = Path.Combine(destinationFolder, $"{fileName} ({copyCount}){fileExtension}");
                             }
+
+                            // Move the file to the destination
+                            File.Move(sourceFile, destinationPath);
+
+                            // Update the image list after moving the file
+                            imageFiles.RemoveAt(currentIndex);  // Remove the moved image from the source list
+
+                            // Adjust the index to avoid resetting to the first image
+                            if (imageFiles.Count > 0)
+                            {
+                                currentIndex = Math.Min(currentIndex, imageFiles.Count - 1);  // Adjust the index to stay within bounds
+                                DisplayImage(currentIndex);  // Display the next image or the last one
+                            }
+                            else
+                            {
+                                // No images left, reset to a blank state
+                                SelectedImage.Source = null;
+                                ImageFileName.Text = string.Empty;
+                                ImageCount.Text = string.Empty;
+                                currentIndex = -1;
+                            }
                         }
                         else
                         {
-                            DisplayImage(currentIndex);
+                            DisplayImage(currentIndex);  // Display the current image if it's not moved
                         }
 
-                        // Move the file to the destination
-                        File.Move(sourceFile, destinationPath);
                         PlaySound("ms-appx:///Assets/Sounds/move.wav");
 
                         // Force garbage collection after moving
@@ -368,6 +382,11 @@ namespace App1
                         var dialog = new MessageDialog($"Error moving the image: {ex.Message}");
                         await dialog.ShowAsync();
                     }
+                    finally
+                    {
+                        // Re-enable FileSystemWatcher after moving the file
+                        fileWatcher.EnableRaisingEvents = true;
+                    }
                 }
                 else
                 {
@@ -376,34 +395,77 @@ namespace App1
             }
         }
 
-        // Method to release resources used by the current image
-        private void ReleaseImageResources()
+        private async void DeleteImage_Click(object sender, RoutedEventArgs e)
         {
-            if (SelectedImage.Source != null)
+            if (currentIndex >= 0 && currentIndex < imageFiles.Count)
             {
-                // Release the current image source to free up memory
-                SelectedImage.Source = null;
+                string fileToDelete = imageFiles[currentIndex];
 
-                // Force garbage collection
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
+                // Create the dialog
+                var confirmDialog = new ContentDialog
+                {
+                    Title = "Delete Confirmation",
+                    Content = $"Are you sure you want to delete {Path.GetFileName(fileToDelete)}?",
+                    PrimaryButtonText = "Yes",
+                    CloseButtonText = "No",
+                    XamlRoot = this.Content.XamlRoot  // Set XamlRoot for proper dialog display
+                };
+
+                // Show the dialog and capture the result
+                var result = await confirmDialog.ShowAsync();
+
+                if (result == ContentDialogResult.Primary)
+                {
+                    try
+                    {
+                        // Release image resources before deleting
+                        ReleaseImageResources();
+
+                        // Delete the file
+                        File.Delete(fileToDelete);
+
+                        // Remove the image from the list
+                        imageFiles.RemoveAt(currentIndex);
+
+                        // Update the UI to display the next image or reset
+                        if (imageFiles.Count > 0)
+                        {
+                            currentIndex = Math.Min(currentIndex, imageFiles.Count - 1);  // Adjust index to avoid out of bounds
+                            DisplayImage(currentIndex);  // Show next image
+                        }
+                        else
+                        {
+                            // No images left, clear the display
+                            SelectedImage.Source = null;
+                            ImageFileName.Text = string.Empty;
+                            ImageCount.Text = string.Empty;
+                            currentIndex = -1;
+                        }
+
+                        PlaySound("ms-appx:///Assets/Sounds/delete.wav");
+
+                        // Force garbage collection after deleting
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                        GC.Collect();
+                    }
+                    catch (IOException ex)
+                    {
+                        var errorDialog = new ContentDialog
+                        {
+                            Title = "Error",
+                            Content = $"Error deleting the image: {ex.Message}",
+                            CloseButtonText = "Ok",
+                            XamlRoot = this.Content.XamlRoot
+                        };
+
+                        await errorDialog.ShowAsync();
+                    }
+                }
             }
         }
 
-        private void HamburgerButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (ControlsContainer.Visibility == Visibility.Collapsed)
-            {
-                ControlsContainer.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                ControlsContainer.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        // Event for double-clicking the ImageCount (to jump to a specific image)
+        // Event for double-clicking
         private void ImageCount_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             if (imageFiles.Count > 0)
@@ -417,8 +479,26 @@ namespace App1
                 ImageCount.Visibility = Visibility.Collapsed;
             }
         }
+        private void ImageFileName_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            if (currentIndex >= 0 && currentIndex < imageFiles.Count)
+            {
+                // Get the full file path and file name
+                string fullFileName = Path.GetFileName(imageFiles[currentIndex]);
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fullFileName);  // Get name without extension
 
-        // Event handler for pressing 'Enter' after entering a number to jump to
+                // Show the filename (without the extension) in the RenameTextBox
+                RenameTextBox.Text = fileNameWithoutExtension;
+                RenameTextBox.Visibility = Visibility.Visible;  // Make the textbox visible for renaming
+                RenameTextBox.Focus(FocusState.Programmatic);  // Focus on the textbox for input
+
+                // Hide the ImageFileName TextBlock
+                ImageFileName.Visibility = Visibility.Collapsed;
+            }
+        }
+
+
+        // ImageCount TextBox
         private void JumpToTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == Windows.System.VirtualKey.Enter)
@@ -451,8 +531,6 @@ namespace App1
                 ImageCount.Visibility = Visibility.Visible;
             }
         }
-
-        // Event handler if the RenameTextBox loses focus (optional but ensures renaming completes)
         private void JumpToTextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             // Hide the RenameTextBox and show the ImageFileName TextBlock if the RenameTextBox loses focus
@@ -460,26 +538,7 @@ namespace App1
             ImageCount.Visibility = Visibility.Visible;
         }
 
-        // Event for double-clicking the ImageFileName (to enable renaming)
-        private void ImageFileName_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
-        {
-            if (currentIndex >= 0 && currentIndex < imageFiles.Count)
-            {
-                // Get the full file path and file name
-                string fullFileName = Path.GetFileName(imageFiles[currentIndex]);
-                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fullFileName);  // Get name without extension
-
-                // Show the filename (without the extension) in the RenameTextBox
-                RenameTextBox.Text = fileNameWithoutExtension;
-                RenameTextBox.Visibility = Visibility.Visible;  // Make the textbox visible for renaming
-                RenameTextBox.Focus(FocusState.Programmatic);  // Focus on the textbox for input
-
-                // Hide the ImageFileName TextBlock
-                ImageFileName.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        // Event handler for pressing 'Enter' after renaming
+        // ImageFileName TextBox
         private void RenameTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == Windows.System.VirtualKey.Enter && currentIndex >= 0 && currentIndex < imageFiles.Count)
@@ -521,8 +580,6 @@ namespace App1
                 }
             }
         }
-
-        // Event handler if the RenameTextBox loses focus (optional but ensures renaming completes)
         private void RenameTextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             // Hide the RenameTextBox and show the ImageFileName TextBlock if the RenameTextBox loses focus
@@ -530,32 +587,43 @@ namespace App1
             ImageFileName.Visibility = Visibility.Visible;
         }
 
-        private void SwitchFolders_Click(object sender, RoutedEventArgs e)
+        private void CenterWindow()
         {
-            // Swap the paths of the source and destination folders
-            string temp = ImageFolderPath.Text;
-            ImageFolderPath.Text = DestinationFolderPath.Text;
-            DestinationFolderPath.Text = temp;
+            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            var windowId = Win32Interop.GetWindowIdFromWindow(hWnd);
+            var appWindow = AppWindow.GetFromWindowId(windowId);
 
-            // Update the destination folder variable
-            destinationFolder = DestinationFolderPath.Text;
+            var displayArea = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary);
+            var centerX = (displayArea.WorkArea.Width - appWindow.Size.Width) / 2;
+            var centerY = (displayArea.WorkArea.Height - appWindow.Size.Height) / 2;
 
-            // Update the FileSystemWatcher to monitor the new source folder
-            if (!string.IsNullOrEmpty(ImageFolderPath.Text))
+            appWindow.Move(new PointInt32(centerX, centerY));
+        }
+        private void PlaySound(string soundFilePath)
+        {
+            try
             {
-                // Disable the watcher to avoid conflicts during switching
-                fileWatcher.EnableRaisingEvents = false;
-
-                // Set the new folder to watch
-                fileWatcher.Path = ImageFolderPath.Text;
-                fileWatcher.EnableRaisingEvents = true; // Re-enable the watcher
-
-                // Reload the images from the new source folder
-                LoadImagesFromFolder(ImageFolderPath.Text);
+                mediaPlayer.Source = MediaSource.CreateFromUri(new Uri(soundFilePath));
+                mediaPlayer.Play();
+            }
+            catch (Exception ex)
+            {
+                var dialog = new MessageDialog($"Error playing sound: {ex.Message}");
             }
         }
+        private void ReleaseImageResources()
+        {
+            if (SelectedImage.Source != null)
+            {
+                // Release the current image source to free up memory
+                SelectedImage.Source = null;
 
-        // Event for handling key presses (hotkeys)
+                // Force garbage collection
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+            }
+        }
         private void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             // Check if Alt is pressed using InputKeyboardSource
@@ -574,6 +642,10 @@ namespace App1
             {
                 MoveImage_Click(sender, e);  // Trigger Move button when Down Arrow is pressed
             }
+            else if (e.Key == Windows.System.VirtualKey.Up)
+            {
+                DeleteImage_Click(sender, e); // Trigger Delete button when Up Arrow is pressed
+            }
 
             // A, S, D keys should only work with Alt
             else if (isCtrlPressed)
@@ -589,6 +661,10 @@ namespace App1
                 else if (e.Key == Windows.System.VirtualKey.S)
                 {
                     MoveImage_Click(sender, e);  // Trigger Move button when Alt + S is pressed
+                }
+                else if (e.Key == Windows.System.VirtualKey.W)
+                {
+                    DeleteImage_Click(sender, e);  // Trigger Delete button when Alt + S is pressed
                 }
             }
         }
