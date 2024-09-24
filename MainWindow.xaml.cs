@@ -112,9 +112,9 @@ namespace App1
                         }
                         else if (storageItem.IsOfType(StorageItemTypes.File))
                         {
-                            // Image file dropped as source
+                            // Image file dropped
                             var fileExtension = Path.GetExtension(storageItem.Name).ToLower();
-                            if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png")
+                            if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png" || fileExtension == ".gif")
                             {
                                 var folderPath = Path.GetDirectoryName(storageItem.Path);
                                 ImageFolderPath.Text = folderPath; // Display the source folder path
@@ -130,6 +130,7 @@ namespace App1
                                 }
                             }
                         }
+
                     }
                     else
                     {
@@ -229,8 +230,9 @@ namespace App1
         {
             imageFiles = Directory.GetFiles(folderPath, "*.*")
                 .Where(file => file.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                               file.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
+                               file.EndsWith(".gif", StringComparison.OrdinalIgnoreCase))
                 .ToList();
             if (imageFiles.Count > 0)
             {
@@ -286,13 +288,29 @@ namespace App1
                 // Display the file name on top
                 ImageFileName.Text = Path.GetFileName(selectedImagePath);
 
-                // Load the image into a MemoryStream to avoid file lock
-                using (FileStream fs = new FileStream(selectedImagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    BitmapImage bitmap = new BitmapImage();
-                    bitmap.SetSource(fs.AsRandomAccessStream());
+                var fileExtension = Path.GetExtension(selectedImagePath).ToLower();
 
-                    SelectedImage.Source = bitmap;  // Display the selected image
+                if (fileExtension == ".gif")
+                {
+                    // GIF handling
+                    var gifBitmap = new BitmapImage();
+                    using (var stream = File.OpenRead(selectedImagePath))
+                    {
+                        gifBitmap.SetSource(stream.AsRandomAccessStream());
+                    }
+
+                    SelectedImage.Source = gifBitmap;
+                }
+                else
+                {
+                    // For other image types, display as a static bitmap
+                    using (FileStream fs = new FileStream(selectedImagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        BitmapImage bitmap = new BitmapImage();
+                        bitmap.SetSource(fs.AsRandomAccessStream());
+
+                        SelectedImage.Source = bitmap;  // Display the selected image
+                    }
                 }
 
                 // Force garbage collection to clean up memory
