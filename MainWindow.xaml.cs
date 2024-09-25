@@ -19,6 +19,7 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Windows.System;
 using Microsoft.UI.Xaml.Controls;
+using ImageMagick;
 
 namespace App1
 {
@@ -309,16 +310,142 @@ namespace App1
             }
         }
 
+        private async void ConvertImage_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentIndex < 0 || currentIndex >= imageFiles.Count)
+            {
+                ShowMessage("Please select an image first.");
+                return;
+            }
+
+            string selectedImagePath = imageFiles[currentIndex];
+            ComboBoxItem selectedFormat = (ComboBoxItem)FormatComboBox.SelectedItem;
+            string selectedExtension = selectedFormat?.Tag?.ToString();
+
+            // Ensure a format is selected
+            if (string.IsNullOrEmpty(selectedExtension))
+            {
+                ShowMessage("Please select a format to convert the image.");
+                return;
+            }
+
+            // Determine if the user wants to replace the original file
+            bool replaceOriginal = ReplaceOriginalToggle.IsOn;
+            string outputFilePath = replaceOriginal
+                ? selectedImagePath  // Replace original file
+                : Path.Combine(Path.GetDirectoryName(selectedImagePath),
+                               Path.GetFileNameWithoutExtension(selectedImagePath) + selectedExtension); // Save as a new file
+
+            try
+            {
+                // Temporarily disable the FileSystemWatcher to prevent it from resetting the displayed image
+                fileWatcher.EnableRaisingEvents = false;
+
+                // Perform the conversion asynchronously to avoid UI lag
+                await Task.Run(() =>
+                {
+                    using (MagickImage image = new MagickImage(selectedImagePath))
+                    {
+                        switch (selectedExtension)
+                        {
+                            case ".png":
+                                image.Format = MagickFormat.Png;
+                                break;
+                            case ".jpg":
+                            case ".jpeg":
+                                image.Format = MagickFormat.Jpeg;
+                                break;
+                            case ".bmp":
+                                image.Format = MagickFormat.Bmp;
+                                break;
+                            case ".gif":
+                                image.Format = MagickFormat.Gif;
+                                break;
+                            case ".webp":
+                                image.Format = MagickFormat.WebP;
+                                break;
+                            case ".ico":
+                                int maxIcoSize = 128;
+                                if (image.Width > maxIcoSize || image.Height > maxIcoSize)
+                                {
+                                    image.Resize((uint)maxIcoSize, (uint)maxIcoSize);
+                                }
+                                image.Format = MagickFormat.Icon;
+                                break;
+                            default:
+                                throw new NotSupportedException($"The selected format {selectedExtension} is not supported.");
+                        }
+
+                        // Write the image to the output path
+                        image.Write(outputFilePath);
+                    }
+                });
+
+                ShowMessage($"Image converted successfully to {selectedExtension.ToUpper()} format.\nSaved at: {outputFilePath}");
+
+                // Handle index so the current image doesn't reset to the first one
+                if (replaceOriginal)
+                {
+                    // Keep the currentIndex the same since the image was replaced
+                    DisplayImage(currentIndex);
+                }
+                else
+                {
+                    // If a new file is created, adjust the image list and display the image at the currentIndex
+                    imageFiles[currentIndex] = outputFilePath; // Update the path in the list
+                    DisplayImage(currentIndex); // Display the newly converted image
+                }
+
+                // Manually call OnFolderChanged to trigger FileSystemWatcher update
+                OnFolderChanged(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, Path.GetDirectoryName(outputFilePath), Path.GetFileName(outputFilePath)));
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error converting image: {ex.Message}");
+            }
+            finally
+            {
+                // Re-enable the FileSystemWatcher after the conversion is done
+                fileWatcher.EnableRaisingEvents = true;
+            }
+        }
+        // Helper method to show messages to the user
+        private async void ShowMessage(string message)
+        {
+            ContentDialog dialog = new ContentDialog
+            {
+                Title = "Notification",
+                Content = message,
+                CloseButtonText = "OK",
+                XamlRoot = this.Content.XamlRoot // Use the current XamlRoot in WinUI 3
+            };
+
+            await dialog.ShowAsync();
+        }
+
         // Bar Buttons
         private void HamburgerButton_Click(object sender, RoutedEventArgs e)
         {
             if (ControlsContainer.Visibility == Visibility.Collapsed)
             {
                 ControlsContainer.Visibility = Visibility.Visible;
+                ConversionContainer.Visibility = Visibility.Collapsed;
             }
             else
             {
                 ControlsContainer.Visibility = Visibility.Collapsed;
+            }
+        }
+        private void ConversionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ConversionContainer.Visibility == Visibility.Collapsed)
+            {
+                ConversionContainer.Visibility = Visibility.Visible;
+                ControlsContainer.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                ConversionContainer.Visibility = Visibility.Collapsed;
             }
         }
         private async void MoveImage_Click(object sender, RoutedEventArgs e)
@@ -402,7 +529,6 @@ namespace App1
                 }
             }
         }
-
         private async void DeleteImage_Click(object sender, RoutedEventArgs e)
         {
             if (currentIndex >= 0 && currentIndex < imageFiles.Count)
