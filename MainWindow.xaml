@@ -145,13 +145,12 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Conversion controls in the left half -->
-                    <StackPanel Orientation="Vertical" Grid.Column="0" Margin="0,0,10,0">
+                    <StackPanel Orientation="Vertical" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="0,0,10,0">
                         <!-- ComboBox for selecting output format -->
                         <ComboBox x:Name="FormatComboBox" 
                                   Width="200" 
                                   Background="#2e2e2e" 
                                   Foreground="White"
-                                  HorizontalAlignment="Stretch"
                                   SelectedIndex="0">
                             <ComboBoxItem Content="PNG" Tag=".png" />
                             <ComboBoxItem Content="JPG" Tag=".jpg" />
@@ -164,26 +163,24 @@
 
                         <!-- Button to trigger image conversion -->
                         <Button Content="Convert Image" 
-                        Click="ConvertImage_Click" 
-                        Width="200" 
-                        Height="35" 
-                        Margin="0,5,0,0"
-                        Background="#333333" 
-                        Foreground="White"
-                        HorizontalAlignment="Stretch" />
+                                Click="ConvertImage_Click" 
+                                Width="200" 
+                                Height="35" 
+                                Margin="0,5,0,0"
+                                Background="#333333" 
+                                Foreground="White"/>
                     </StackPanel>
 
                     <!-- ToggleSwitch and label in the right half -->
-                    <StackPanel Orientation="Vertical" Grid.Column="1" HorizontalAlignment="Center">
-                        <TextBlock Text="Save to Destination Folder:" 
-                           VerticalAlignment="Center" 
-                           Foreground="White" 
-                           Margin="0,0,10,0" />
+                    <StackPanel Orientation="Vertical" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                        <TextBlock Text="Save to the same folder:" 
+                                   Foreground="White" 
+                                   Margin="0,0,0,0" />
                         <ToggleSwitch x:Name="SaveToSameFolderToggle" 
-                              OffContent="No" 
-                              OnContent="Yes" 
-                              IsOn="False" 
-                              Foreground="White" />
+                                      OffContent="No" 
+                                      OnContent="Yes" 
+                                      IsOn="False" 
+                                      Foreground="White" />
                     </StackPanel>
                 </Grid>
             </Grid>
@@ -225,7 +222,7 @@
                             FontSize="12"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center" 
-                            Margin="5,0,0,0" 
+                            Margin="15,0,0,0" 
                             Click="MoveImage_Click"
                             Background="#333333" 
                             Foreground="White"

@@ -65,65 +65,6 @@ namespace App1
             mediaPlayer = new MediaPlayer();  // Initialize the MediaPlayer for sound
         }
 
-        // Event for the 'Browse Image Folder' button click
-        private async void BrowseImageFolder_Click(object sender, RoutedEventArgs e)
-        {
-            FolderPicker folderPicker = new FolderPicker();
-            folderPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-            folderPicker.FileTypeFilter.Add("*");
-
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);  // Get HWND for WinUI 3 compatibility
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
-
-            var folder = await folderPicker.PickSingleFolderAsync();
-            if (folder != null)
-            {
-                ImageFolderPath.Text = folder.Path;  // Update the Image Folder Path textbox
-                LoadImagesFromFolder(folder.Path);  // Load all images from the selected folder
-            }
-        }
-        // Event for the switching source and destination
-        private void SwitchFolders_Click(object sender, RoutedEventArgs e)
-        {
-            // Swap the paths of the source and destination folders
-            string temp = ImageFolderPath.Text;
-            ImageFolderPath.Text = DestinationFolderPath.Text;
-            DestinationFolderPath.Text = temp;
-
-            // Update the destination folder variable
-            destinationFolder = DestinationFolderPath.Text;
-
-            // Update the FileSystemWatcher to monitor the new source folder
-            if (!string.IsNullOrEmpty(ImageFolderPath.Text))
-            {
-                // Disable the watcher to avoid conflicts during switching
-                fileWatcher.EnableRaisingEvents = false;
-
-                // Set the new folder to watch
-                fileWatcher.Path = ImageFolderPath.Text;
-                fileWatcher.EnableRaisingEvents = true; // Re-enable the watcher
-
-                // Reload the images from the new source folder
-                LoadImagesFromFolder(ImageFolderPath.Text);
-            }
-        }
-        // Event for the 'Browse Destination Folder' button click
-        private async void BrowseDestinationFolder_Click(object sender, RoutedEventArgs e)
-        {
-            FolderPicker folderPicker = new FolderPicker();
-            folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-            folderPicker.FileTypeFilter.Add("*");
-
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);  // Get HWND for WinUI 3 compatibility
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
-
-            var folder = await folderPicker.PickSingleFolderAsync();
-            if (folder != null)
-            {
-                DestinationFolderPath.Text = folder.Path;
-                destinationFolder = folder.Path;  // Set the destination folder
-            }
-        }
         // Drag and Drop Function
         private async void OnDrop(object sender, Microsoft.UI.Xaml.DragEventArgs e)
         {
@@ -310,6 +251,88 @@ namespace App1
             }
         }
 
+        // Methods for Directory
+        private void HamburgerButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ControlsContainer.Visibility == Visibility.Collapsed)
+            {
+                ControlsContainer.Visibility = Visibility.Visible;
+                ConversionContainer.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                ControlsContainer.Visibility = Visibility.Collapsed;
+            }
+        }
+        private async void BrowseImageFolder_Click(object sender, RoutedEventArgs e)
+        {
+            FolderPicker folderPicker = new FolderPicker();
+            folderPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+            folderPicker.FileTypeFilter.Add("*");
+
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);  // Get HWND for WinUI 3 compatibility
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                ImageFolderPath.Text = folder.Path;  // Update the Image Folder Path textbox
+                LoadImagesFromFolder(folder.Path);  // Load all images from the selected folder
+            }
+        }
+        private void SwitchFolders_Click(object sender, RoutedEventArgs e)
+        {
+            // Swap the paths of the source and destination folders
+            string temp = ImageFolderPath.Text;
+            ImageFolderPath.Text = DestinationFolderPath.Text;
+            DestinationFolderPath.Text = temp;
+
+            // Update the destination folder variable
+            destinationFolder = DestinationFolderPath.Text;
+
+            // Update the FileSystemWatcher to monitor the new source folder
+            if (!string.IsNullOrEmpty(ImageFolderPath.Text))
+            {
+                // Disable the watcher to avoid conflicts during switching
+                fileWatcher.EnableRaisingEvents = false;
+
+                // Set the new folder to watch
+                fileWatcher.Path = ImageFolderPath.Text;
+                fileWatcher.EnableRaisingEvents = true; // Re-enable the watcher
+
+                // Reload the images from the new source folder
+                LoadImagesFromFolder(ImageFolderPath.Text);
+            }
+        }
+        private async void BrowseDestinationFolder_Click(object sender, RoutedEventArgs e)
+        {
+            FolderPicker folderPicker = new FolderPicker();
+            folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+            folderPicker.FileTypeFilter.Add("*");
+
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);  // Get HWND for WinUI 3 compatibility
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                DestinationFolderPath.Text = folder.Path;
+                destinationFolder = folder.Path;  // Set the destination folder
+            }
+        }
+        // Methods for Conversion
+        private void ConversionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ConversionContainer.Visibility == Visibility.Collapsed)
+            {
+                ConversionContainer.Visibility = Visibility.Visible;
+                ControlsContainer.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                ConversionContainer.Visibility = Visibility.Collapsed;
+            }
+        }
         private async void ConvertImage_Click(object sender, RoutedEventArgs e)
         {
             if (currentIndex < 0 || currentIndex >= imageFiles.Count)
@@ -328,9 +351,8 @@ namespace App1
                 return;
             }
 
-            // Check if the user wants to save the file in the same folder or a different one
             string outputFolder;
-            if (!SaveToSameFolderToggle.IsOn)  // Assuming there's a toggle to decide this
+            if (SaveToSameFolderToggle.IsOn)  // Assuming there's a toggle to decide this
             {
                 outputFolder = Path.GetDirectoryName(selectedImagePath); // Use the same folder as the original
             }
@@ -348,20 +370,23 @@ namespace App1
 
             try
             {
-                // Temporarily disable the FileSystemWatcher to prevent it from resetting the displayed image
-                fileWatcher.EnableRaisingEvents = false;
+                ReleaseImageResources();
 
-                // Perform the conversion asynchronously to avoid UI lag
+                fileWatcher.EnableRaisingEvents = false;  // Disable watcher to prevent conflict during file changes
+
                 await Task.Run(() =>
                 {
                     using (MagickImage image = new MagickImage(selectedImagePath))
                     {
+                        // Perform format conversion
                         switch (selectedExtension)
                         {
                             case ".png":
                                 image.Format = MagickFormat.Png;
                                 break;
                             case ".jpg":
+                                image.Format = MagickFormat.Jpg;
+                                break;
                             case ".jpeg":
                                 image.Format = MagickFormat.Jpeg;
                                 break;
@@ -386,27 +411,27 @@ namespace App1
                                 throw new NotSupportedException($"The selected format {selectedExtension} is not supported.");
                         }
 
-                        // Write the image to the output path
                         image.Write(outputFilePath);
                     }
                 });
 
                 ShowMessage($"Image converted successfully to {selectedExtension.ToUpper()} format.\nSaved at: {outputFilePath}");
 
-                // If the output path is the same as the original, just refresh the current display
-                if (outputFolder == Path.GetDirectoryName(selectedImagePath))
+                int previousIndex = currentIndex;  // Save the current index
+                string previousImagePath = imageFiles[currentIndex];  // Save the current image path
+
+                LoadImagesFromFolder(ImageFolderPath.Text);  // Refresh the folder content after conversion
+
+                // Find the new index of the previously displayed image
+                currentIndex = imageFiles.IndexOf(previousImagePath);
+
+                if (currentIndex == -1)
                 {
-                    DisplayImage(currentIndex);  // Refresh the current image
-                }
-                else
-                {
-                    // If it's in a different folder, update the path in the list but keep the same index
-                    imageFiles[currentIndex] = outputFilePath;
-                    DisplayImage(currentIndex); // Display the newly converted image
+                    // If the file no longer exists, adjust index to stay within bounds
+                    currentIndex = Math.Min(previousIndex, imageFiles.Count - 1);
                 }
 
-                // Trigger OnFolderChanged to refresh any UI or image list (if necessary)
-                OnFolderChanged(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, outputFolder, Path.GetFileName(outputFilePath)));
+                DisplayImage(currentIndex);  // Redisplay the correct image
             }
             catch (Exception ex)
             {
@@ -414,49 +439,10 @@ namespace App1
             }
             finally
             {
-                // Re-enable the FileSystemWatcher after the conversion is done
-                fileWatcher.EnableRaisingEvents = true;
+                fileWatcher.EnableRaisingEvents = true;  // Re-enable watcher
             }
         }
-        // Helper method to show messages to the user
-        private async void ShowMessage(string message)
-        {
-            ContentDialog dialog = new ContentDialog
-            {
-                Title = "Notification",
-                Content = message,
-                CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot // Use the current XamlRoot in WinUI 3
-            };
-
-            await dialog.ShowAsync();
-        }
-
-        // Bar Buttons
-        private void HamburgerButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (ControlsContainer.Visibility == Visibility.Collapsed)
-            {
-                ControlsContainer.Visibility = Visibility.Visible;
-                ConversionContainer.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                ControlsContainer.Visibility = Visibility.Collapsed;
-            }
-        }
-        private void ConversionButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (ConversionContainer.Visibility == Visibility.Collapsed)
-            {
-                ConversionContainer.Visibility = Visibility.Visible;
-                ControlsContainer.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                ConversionContainer.Visibility = Visibility.Collapsed;
-            }
-        }
+        // Method for Move
         private async void MoveImage_Click(object sender, RoutedEventArgs e)
         {
             if (currentIndex >= 0 && currentIndex < imageFiles.Count)
@@ -538,13 +524,14 @@ namespace App1
                 }
             }
         }
+        // Method for Delete
         private async void DeleteImage_Click(object sender, RoutedEventArgs e)
         {
             if (currentIndex >= 0 && currentIndex < imageFiles.Count)
             {
                 string fileToDelete = imageFiles[currentIndex];
 
-                // Create the dialog
+                // Create the confirmation dialog
                 var confirmDialog = new ContentDialog
                 {
                     Title = "Delete Confirmation",
@@ -564,27 +551,38 @@ namespace App1
                         // Release image resources before deleting
                         ReleaseImageResources();
 
+                        // Save the current index and image path
+                        int previousIndex = currentIndex;
+                        string previousImagePath = imageFiles[currentIndex];
+
                         // Delete the file
                         File.Delete(fileToDelete);
 
                         // Remove the image from the list
                         imageFiles.RemoveAt(currentIndex);
 
-                        // Update the UI to display the next image or reset
+                        // Check if there are still images in the folder
                         if (imageFiles.Count > 0)
                         {
-                            currentIndex = Math.Min(currentIndex, imageFiles.Count - 1);  // Adjust index to avoid out of bounds
-                            DisplayImage(currentIndex);  // Show next image
+                            // Adjust index to avoid out of bounds
+                            currentIndex = Math.Min(previousIndex, imageFiles.Count - 1);
+
+                            // Refresh the folder contents to ensure up-to-date state
+                            LoadImagesFromFolder(ImageFolderPath.Text);
+
+                            // Display the next or nearest image
+                            DisplayImage(currentIndex);
                         }
                         else
                         {
-                            // No images left, clear the display
+                            // No images left, reset the display
                             SelectedImage.Source = null;
                             ImageFileName.Text = string.Empty;
                             ImageCount.Text = string.Empty;
                             currentIndex = -1;
                         }
 
+                        // Play the delete sound
                         PlaySound("ms-appx:///Assets/Sounds/delete.wav");
 
                         // Force garbage collection after deleting
@@ -594,6 +592,7 @@ namespace App1
                     }
                     catch (IOException ex)
                     {
+                        // Show error message if deletion fails
                         var errorDialog = new ContentDialog
                         {
                             Title = "Error",
@@ -639,7 +638,6 @@ namespace App1
                 ImageFileName.Visibility = Visibility.Collapsed;
             }
         }
-
 
         // ImageCount TextBox
         private void JumpToTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -730,6 +728,7 @@ namespace App1
             ImageFileName.Visibility = Visibility.Visible;
         }
 
+        // Misc Controls
         private void CenterWindow()
         {
             var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -753,6 +752,18 @@ namespace App1
             {
                 var dialog = new MessageDialog($"Error playing sound: {ex.Message}");
             }
+        }
+        private async void ShowMessage(string message)
+        {
+            ContentDialog dialog = new ContentDialog
+            {
+                Title = "Notification",
+                Content = message,
+                CloseButtonText = "OK",
+                XamlRoot = this.Content.XamlRoot // Use the current XamlRoot in WinUI 3
+            };
+
+            await dialog.ShowAsync();
         }
         private void ReleaseImageResources()
         {
