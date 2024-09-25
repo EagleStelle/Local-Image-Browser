@@ -175,11 +175,11 @@
 
                     <!-- ToggleSwitch and label in the right half -->
                     <StackPanel Orientation="Vertical" Grid.Column="1" HorizontalAlignment="Center">
-                        <TextBlock Text="Replace Original File:" 
+                        <TextBlock Text="Save to Destination Folder:" 
                            VerticalAlignment="Center" 
                            Foreground="White" 
                            Margin="0,0,10,0" />
-                        <ToggleSwitch x:Name="ReplaceOriginalToggle" 
+                        <ToggleSwitch x:Name="SaveToSameFolderToggle" 
                               OffContent="No" 
                               OnContent="Yes" 
                               IsOn="False" 

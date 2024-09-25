@@ -322,19 +322,29 @@ namespace App1
             ComboBoxItem selectedFormat = (ComboBoxItem)FormatComboBox.SelectedItem;
             string selectedExtension = selectedFormat?.Tag?.ToString();
 
-            // Ensure a format is selected
             if (string.IsNullOrEmpty(selectedExtension))
             {
                 ShowMessage("Please select a format to convert the image.");
                 return;
             }
 
-            // Determine if the user wants to replace the original file
-            bool replaceOriginal = ReplaceOriginalToggle.IsOn;
-            string outputFilePath = replaceOriginal
-                ? selectedImagePath  // Replace original file
-                : Path.Combine(Path.GetDirectoryName(selectedImagePath),
-                               Path.GetFileNameWithoutExtension(selectedImagePath) + selectedExtension); // Save as a new file
+            // Check if the user wants to save the file in the same folder or a different one
+            string outputFolder;
+            if (!SaveToSameFolderToggle.IsOn)  // Assuming there's a toggle to decide this
+            {
+                outputFolder = Path.GetDirectoryName(selectedImagePath); // Use the same folder as the original
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(destinationFolder) || !Directory.Exists(destinationFolder))
+                {
+                    ShowMessage("Please specify a valid destination folder.");
+                    return;
+                }
+                outputFolder = destinationFolder; // Use the different folder provided
+            }
+
+            string outputFilePath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(selectedImagePath) + selectedExtension);
 
             try
             {
@@ -383,21 +393,20 @@ namespace App1
 
                 ShowMessage($"Image converted successfully to {selectedExtension.ToUpper()} format.\nSaved at: {outputFilePath}");
 
-                // Handle index so the current image doesn't reset to the first one
-                if (replaceOriginal)
+                // If the output path is the same as the original, just refresh the current display
+                if (outputFolder == Path.GetDirectoryName(selectedImagePath))
                 {
-                    // Keep the currentIndex the same since the image was replaced
-                    DisplayImage(currentIndex);
+                    DisplayImage(currentIndex);  // Refresh the current image
                 }
                 else
                 {
-                    // If a new file is created, adjust the image list and display the image at the currentIndex
-                    imageFiles[currentIndex] = outputFilePath; // Update the path in the list
+                    // If it's in a different folder, update the path in the list but keep the same index
+                    imageFiles[currentIndex] = outputFilePath;
                     DisplayImage(currentIndex); // Display the newly converted image
                 }
 
-                // Manually call OnFolderChanged to trigger FileSystemWatcher update
-                OnFolderChanged(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, Path.GetDirectoryName(outputFilePath), Path.GetFileName(outputFilePath)));
+                // Trigger OnFolderChanged to refresh any UI or image list (if necessary)
+                OnFolderChanged(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, outputFolder, Path.GetFileName(outputFilePath)));
             }
             catch (Exception ex)
             {
