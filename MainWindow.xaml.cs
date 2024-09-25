@@ -20,6 +20,7 @@ using Windows.Storage;
 using Windows.System;
 using Microsoft.UI.Xaml.Controls;
 using ImageMagick;
+using System.Diagnostics;
 
 namespace App1
 {
@@ -337,68 +338,114 @@ namespace App1
         {
             if (currentIndex < 0 || currentIndex >= imageFiles.Count)
             {
-                ShowMessage("Please select an image first.");
+                await ShowMessage("Please select an image first.");
                 return;
             }
 
-            string selectedImagePath = imageFiles[currentIndex];
-            ComboBoxItem selectedFormat = (ComboBoxItem)FormatComboBox.SelectedItem;
-            string selectedExtension = selectedFormat?.Tag?.ToString();
-
-            if (string.IsNullOrEmpty(selectedExtension))
+            // Check if the toggle button is on for bulk conversion
+            if (BulkConvertToggleButton.IsOn)
             {
-                ShowMessage("Please select a format to convert the image.");
-                return;
+                ComboBoxItem selectedSourceFormatItem = (ComboBoxItem)SourceExtensionComboBox.SelectedItem;
+                string sourceExtension = selectedSourceFormatItem?.Tag?.ToString();
+
+                ComboBoxItem selectedOutputFormatItem = (ComboBoxItem)OutputExtensionComboBox.SelectedItem;
+                string outputExtension = selectedOutputFormatItem?.Tag?.ToString();
+
+                if (string.IsNullOrEmpty(sourceExtension) || string.IsNullOrEmpty(outputExtension))
+                {
+                    await ShowMessage("Please select both source and target formats.");
+                    return;
+                }
+
+                // Filter image files by the source extension and convert them to the output extension
+                var tasks = imageFiles
+                    .Where(imagePath => Path.GetExtension(imagePath).Equals(sourceExtension, StringComparison.OrdinalIgnoreCase))
+                    .Select(imagePath => ConvertImageToFormat(imagePath, outputExtension));
+
+                try
+                {
+                    await Task.WhenAll(tasks);
+                    await ShowMessage($"All images with {sourceExtension.ToUpper()} extension have been converted to {outputExtension.ToUpper()}.");
+                }
+                catch (Exception ex)
+                {
+                    await ShowMessage($"Error during bulk conversion: {ex.Message}");
+                }
+            }
+            else
+            {
+                // Convert only the currently displayed image
+                string selectedImagePath = imageFiles[currentIndex];
+                ComboBoxItem selectedFormat = (ComboBoxItem)OutputExtensionComboBox.SelectedItem;
+                string selectedExtension = selectedFormat?.Tag?.ToString();
+
+                if (string.IsNullOrEmpty(selectedExtension))
+                {
+                    await ShowMessage("Please select a format to convert the image.");
+                    return;
+                }
+
+                try
+                {
+                    await ConvertImageToFormat(selectedImagePath, selectedExtension);
+                    await ShowMessage("Image converted successfully.");
+                }
+                catch (Exception ex)
+                {
+                    await ShowMessage($"Error converting image: {ex.Message}");
+                }
             }
 
+            // Refresh and display the updated image list
+            int previousIndex = currentIndex;
+            string previousImagePath = imageFiles[currentIndex];
+            LoadImagesFromFolder(ImageFolderPath.Text);
+
+            currentIndex = imageFiles.IndexOf(previousImagePath);
+            if (currentIndex == -1)
+            {
+                currentIndex = Math.Min(previousIndex, imageFiles.Count - 1);
+            }
+            DisplayImage(currentIndex);
+        }
+
+        // Helper method to perform the actual conversion
+        private async Task ConvertImageToFormat(string imagePath, string selectedExtension)
+        {
             string outputFolder;
-            if (SaveToSameFolderToggle.IsOn)  // Assuming there's a toggle to decide this
+            if (SaveToSameFolderToggle.IsOn)
             {
-                outputFolder = Path.GetDirectoryName(selectedImagePath); // Use the same folder as the original
+                outputFolder = Path.GetDirectoryName(imagePath);
             }
             else
             {
                 if (string.IsNullOrEmpty(destinationFolder) || !Directory.Exists(destinationFolder))
                 {
-                    ShowMessage("Please specify a valid destination folder.");
+                    await ShowMessage("Please specify a valid destination folder.");
                     return;
                 }
-                outputFolder = destinationFolder; // Use the different folder provided
+                outputFolder = destinationFolder;
             }
 
-            string outputFilePath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(selectedImagePath) + selectedExtension);
+            string outputFilePath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(imagePath) + selectedExtension);
 
             try
             {
                 ReleaseImageResources();
-
-                fileWatcher.EnableRaisingEvents = false;  // Disable watcher to prevent conflict during file changes
+                fileWatcher.EnableRaisingEvents = false;
 
                 await Task.Run(() =>
                 {
-                    using (MagickImage image = new MagickImage(selectedImagePath))
+                    using (MagickImage image = new MagickImage(imagePath))
                     {
-                        // Perform format conversion
                         switch (selectedExtension)
                         {
-                            case ".png":
-                                image.Format = MagickFormat.Png;
-                                break;
-                            case ".jpg":
-                                image.Format = MagickFormat.Jpg;
-                                break;
-                            case ".jpeg":
-                                image.Format = MagickFormat.Jpeg;
-                                break;
-                            case ".bmp":
-                                image.Format = MagickFormat.Bmp;
-                                break;
-                            case ".gif":
-                                image.Format = MagickFormat.Gif;
-                                break;
-                            case ".webp":
-                                image.Format = MagickFormat.WebP;
-                                break;
+                            case ".png": image.Format = MagickFormat.Png; break;
+                            case ".jpg": image.Format = MagickFormat.Jpg; break;
+                            case ".jpeg": image.Format = MagickFormat.Jpeg; break;
+                            case ".bmp": image.Format = MagickFormat.Bmp; break;
+                            case ".gif": image.Format = MagickFormat.Gif; break;
+                            case ".webp": image.Format = MagickFormat.WebP; break;
                             case ".ico":
                                 int maxIcoSize = 128;
                                 if (image.Width > maxIcoSize || image.Height > maxIcoSize)
@@ -410,38 +457,20 @@ namespace App1
                             default:
                                 throw new NotSupportedException($"The selected format {selectedExtension} is not supported.");
                         }
-
                         image.Write(outputFilePath);
                     }
                 });
-
-                ShowMessage($"Image converted successfully to {selectedExtension.ToUpper()} format.\nSaved at: {outputFilePath}");
-
-                int previousIndex = currentIndex;  // Save the current index
-                string previousImagePath = imageFiles[currentIndex];  // Save the current image path
-
-                LoadImagesFromFolder(ImageFolderPath.Text);  // Refresh the folder content after conversion
-
-                // Find the new index of the previously displayed image
-                currentIndex = imageFiles.IndexOf(previousImagePath);
-
-                if (currentIndex == -1)
-                {
-                    // If the file no longer exists, adjust index to stay within bounds
-                    currentIndex = Math.Min(previousIndex, imageFiles.Count - 1);
-                }
-
-                DisplayImage(currentIndex);  // Redisplay the correct image
             }
             catch (Exception ex)
             {
-                ShowMessage($"Error converting image: {ex.Message}");
+                await ShowMessage($"Error converting image: {ex.Message}");
             }
             finally
             {
-                fileWatcher.EnableRaisingEvents = true;  // Re-enable watcher
+                fileWatcher.EnableRaisingEvents = true;
             }
         }
+
         // Method for Move
         private async void MoveImage_Click(object sender, RoutedEventArgs e)
         {
@@ -607,6 +636,24 @@ namespace App1
             }
         }
 
+        private void BulkConvertToggleButton_Toggled(object sender, RoutedEventArgs e)
+        {
+            // Check if BulkConvertToggleButton is switched on
+            if (BulkConvertToggleButton.IsOn)
+            {
+                // Make SourceFormatTextBlock and SourceExtensionComboBox visible
+                SourceFormatTextBlock.Visibility = Visibility.Visible;
+                SourceExtensionComboBox.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                // Hide SourceFormatTextBlock and SourceExtensionComboBox
+                SourceFormatTextBlock.Visibility = Visibility.Collapsed;
+                SourceExtensionComboBox.Visibility = Visibility.Collapsed;
+            }
+        }
+
+
         // Event for double-clicking
         private void ImageCount_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
@@ -753,8 +800,9 @@ namespace App1
                 var dialog = new MessageDialog($"Error playing sound: {ex.Message}");
             }
         }
-        private async void ShowMessage(string message)
+        private async Task ShowMessage(string message)
         {
+            // Ensure dialog is only shown once at a time
             ContentDialog dialog = new ContentDialog
             {
                 Title = "Notification",
@@ -763,8 +811,17 @@ namespace App1
                 XamlRoot = this.Content.XamlRoot // Use the current XamlRoot in WinUI 3
             };
 
-            await dialog.ShowAsync();
+            try
+            {
+                await dialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                // Catch and log any unexpected errors from the dialog system
+                Debug.WriteLine($"Error showing dialog: {ex.Message}");
+            }
         }
+
         private void ReleaseImageResources()
         {
             if (SelectedImage.Source != null)

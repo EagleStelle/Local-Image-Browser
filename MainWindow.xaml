@@ -119,70 +119,113 @@
             </Grid>
         </Border>
 
-        <!-- Conversion container, placed just above the hamburger button -->
         <Border x:Name="ConversionContainer" 
-                Grid.Row="1"
-                Visibility="Collapsed"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Bottom">
-            <!-- Make space for the hamburger button below -->
-            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10">
-                <!-- Three columns: Left and right for spacing, middle for the content -->
+        Grid.Row="1"
+        Visibility="Collapsed"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center">
+            <!-- Main container grid -->
+            <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10">
+                <!-- Define rows for ComboBoxes, TextBlocks, and button -->
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Define columns; let widths adjust dynamically -->
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <!-- Left spacing -->
-                    <ColumnDefinition Width="Auto" />
-                    <!-- Center content -->
                     <ColumnDefinition Width="*" />
-                    <!-- Right spacing -->
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Content container for centering -->
-                <Grid Grid.Column="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                <!-- Source Format (dynamically hidden) -->
+                <TextBlock x:Name="SourceFormatTextBlock"
+                           Grid.Column="0"
+                           Grid.Row="0"
+                           Text="Source Format:" 
+                           Foreground="White" 
+                           Visibility="Collapsed" />
+                <ComboBox x:Name="SourceExtensionComboBox" 
+                          Grid.Column="0"
+                          Grid.Row="1"
+                          Width="150" 
+                          Background="#2e2e2e" 
+                          Foreground="White"
+                          SelectedIndex="0"
+                          Margin="0,0,5,5"
+                          Visibility="Collapsed">
+                    <ComboBoxItem Content="PNG" Tag=".png" />
+                    <ComboBoxItem Content="JPG" Tag=".jpg" />
+                    <ComboBoxItem Content="JPEG" Tag=".jpeg" />
+                    <ComboBoxItem Content="GIF" Tag=".gif" />
+                    <ComboBoxItem Content="WEBP" Tag=".webp" />
+                    <ComboBoxItem Content="BMP" Tag=".bmp" />
+                    <ComboBoxItem Content="ICO" Tag=".ico" />
+                </ComboBox>
 
-                    <!-- Conversion controls in the left half -->
-                    <StackPanel Orientation="Vertical" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="0,0,10,0">
-                        <!-- ComboBox for selecting output format -->
-                        <ComboBox x:Name="FormatComboBox" 
-                                  Width="200" 
-                                  Background="#2e2e2e" 
-                                  Foreground="White"
-                                  SelectedIndex="0">
-                            <ComboBoxItem Content="PNG" Tag=".png" />
-                            <ComboBoxItem Content="JPG" Tag=".jpg" />
-                            <ComboBoxItem Content="JPEG" Tag=".jpeg" />
-                            <ComboBoxItem Content="GIF" Tag=".gif" />
-                            <ComboBoxItem Content="WEBP" Tag=".webp" />
-                            <ComboBoxItem Content="BMP" Tag=".bmp" />
-                            <ComboBoxItem Content="ICO" Tag=".ico" />
-                        </ComboBox>
+                <!-- Output Format -->
+                <TextBlock Grid.Column="1"
+                           Grid.Row="0"
+                           Text="Output Format:" 
+                           Foreground="White" />
 
-                        <!-- Button to trigger image conversion -->
-                        <Button Content="Convert Image" 
-                                Click="ConvertImage_Click" 
-                                Width="200" 
-                                Height="35" 
-                                Margin="0,5,0,0"
-                                Background="#333333" 
-                                Foreground="White"/>
-                    </StackPanel>
+                <ComboBox x:Name="OutputExtensionComboBox" 
+                          Grid.Column="1"
+                          Grid.Row="1"
+                          Width="150" 
+                          Background="#2e2e2e" 
+                          Foreground="White"
+                          SelectedIndex="0"
+                          Margin="0,0,0,5">
+                    <ComboBoxItem Content="PNG" Tag=".png" />
+                    <ComboBoxItem Content="JPG" Tag=".jpg" />
+                    <ComboBoxItem Content="JPEG" Tag=".jpeg" />
+                    <ComboBoxItem Content="GIF" Tag=".gif" />
+                    <ComboBoxItem Content="WEBP" Tag=".webp" />
+                    <ComboBoxItem Content="BMP" Tag=".bmp" />
+                    <ComboBoxItem Content="ICO" Tag=".ico" />
+                </ComboBox>
 
-                    <!-- ToggleSwitch and label in the right half -->
-                    <StackPanel Orientation="Vertical" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch">
-                        <TextBlock Text="Save to the same folder:" 
+                <!-- StackPanel for toggles -->
+                <StackPanel Grid.Column="2" Grid.RowSpan="2" Orientation="Vertical" VerticalAlignment="Center" Margin="15,0,0,0">
+                    <!-- Bulk convert toggle -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                        <TextBlock Text="Bulk Convert:" 
                                    Foreground="White" 
-                                   Margin="0,0,0,0" />
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,5,0" />
+                        <ToggleSwitch x:Name="BulkConvertToggleButton" 
+                                      OffContent="No" 
+                                      OnContent="Yes" 
+                                      IsOn="False" 
+                                      Foreground="White"
+                                      Toggled="BulkConvertToggleButton_Toggled" />
+                    </StackPanel>
+                    <!-- Save to the same folder toggle -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="Same Folder:" 
+                                   Foreground="White" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,5,0" />
                         <ToggleSwitch x:Name="SaveToSameFolderToggle" 
                                       OffContent="No" 
                                       OnContent="Yes" 
                                       IsOn="False" 
                                       Foreground="White" />
                     </StackPanel>
-                </Grid>
+                </StackPanel>
+
+                <!-- Convert Image button (stretches across columns) -->
+                <Button Grid.Row="2"
+                        Grid.ColumnSpan="3"
+                        Content="Convert Image" 
+                        Click="ConvertImage_Click" 
+                        HorizontalAlignment="Stretch"
+                        Height="35" 
+                        Background="#333333" 
+                        Foreground="White"/>
             </Grid>
         </Border>
 
