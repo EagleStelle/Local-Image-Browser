@@ -202,7 +202,15 @@ namespace App1
                 .Where(file => file.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".gif", StringComparison.OrdinalIgnoreCase))
+                               file.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) ||
+                               file.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase) ||
+                               file.EndsWith(".tiff", StringComparison.OrdinalIgnoreCase) ||
+                               file.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) ||
+                               file.EndsWith(".jfif", StringComparison.OrdinalIgnoreCase) ||
+                               file.EndsWith(".jpeg_large", StringComparison.OrdinalIgnoreCase) ||
+                               file.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ||
+                               file.EndsWith(".ico", StringComparison.OrdinalIgnoreCase) ||
+                               file.EndsWith(".heic", StringComparison.OrdinalIgnoreCase))
                 .ToList();
             if (imageFiles.Count > 0)
             {
