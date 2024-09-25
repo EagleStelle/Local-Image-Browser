@@ -154,6 +154,13 @@ namespace App1
                                file.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".ico", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".heic", StringComparison.OrdinalIgnoreCase))
+                // Natural sorting to handle numerical file names correctly
+                .OrderBy(file => new System.Text.RegularExpressions.Regex(@"\d+").Matches(Path.GetFileNameWithoutExtension(file))
+                    .Cast<System.Text.RegularExpressions.Match>()
+                    .Select(m => int.Parse(m.Value))
+                    .DefaultIfEmpty(0)
+                    .First())
+                .ThenBy(file => file)  // For non-numeric parts
                 .ToList();
             if (imageFiles.Count > 0)
             {
