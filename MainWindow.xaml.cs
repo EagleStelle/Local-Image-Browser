@@ -216,6 +216,8 @@ namespace App1
                 }
             });
         }
+
+        // Method to display an image at the given index
         private void DisplayImage(int currentIndex)
         {
             if (LoadTypeToggle.IsOn)
@@ -229,7 +231,6 @@ namespace App1
                 DisplayImageSync(currentIndex);
             }
         }
-        // Method to display an image at the given index
         private void DisplayImageSync(int index)
         {
             if (index >= 0 && index < imageFiles.Count)
