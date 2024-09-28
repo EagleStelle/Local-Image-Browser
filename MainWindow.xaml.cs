@@ -157,11 +157,19 @@ namespace App1
                 // Natural sorting to handle numerical file names correctly
                 .OrderBy(file => new System.Text.RegularExpressions.Regex(@"\d+").Matches(Path.GetFileNameWithoutExtension(file))
                     .Cast<System.Text.RegularExpressions.Match>()
-                    .Select(m => int.Parse(m.Value))
+                    .Select(m =>
+                    {
+                        if (long.TryParse(m.Value, out long num))
+                        {
+                            return num;
+                        }
+                        return 0; // Default to 0 if parsing fails
+                    })
                     .DefaultIfEmpty(0)
                     .First())
                 .ThenBy(file => file)  // For non-numeric parts
                 .ToList();
+
             if (imageFiles.Count > 0)
             {
                 currentIndex = 0;  // Start with the first image
@@ -208,6 +216,7 @@ namespace App1
                 }
             });
         }
+
         // Method to display an image at the given index
         private void DisplayImage(int index)
         {
@@ -230,10 +239,53 @@ namespace App1
                 // Update image count display without modifying currentIndex
                 ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
 
-                // Force garbage collection to clean up memory
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
+                // Garbage collection (optimized for performance)
+                if (index % 10 == 0)  // Collect every 10 images to avoid frequent calls
+                {
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    GC.Collect();
+                }
+            }
+        }
+        private async Task DisplayImageAsync(int index)
+        {
+            if (index >= 0 && index < imageFiles.Count)
+            {
+                string selectedImagePath = imageFiles[index];
+
+                // Display the file name on top
+                ImageFileName.Text = Path.GetFileName(selectedImagePath);
+
+                // Keep the current image displayed while loading the new one
+                var currentImageSource = SelectedImage.Source;
+
+                // Load the new image in the background
+                BitmapImage bitmap = new BitmapImage();
+
+                // Handle image loading completion to avoid flicker
+                bitmap.ImageOpened += (s, e) =>
+                {
+                    // Once the image is fully loaded, update the source
+                    SelectedImage.Source = bitmap;
+                };
+
+                // Load the image asynchronously from the file
+                using (FileStream fs = new FileStream(selectedImagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    await bitmap.SetSourceAsync(fs.AsRandomAccessStream());
+                }
+
+                // Update image count display
+                ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
+
+                // Garbage collection (optimized for performance)
+                if (index % 10 == 0)  // Collect every 10 images to avoid frequent calls
+                {
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    GC.Collect();
+                }
             }
         }
         // Event for the 'Next' button
