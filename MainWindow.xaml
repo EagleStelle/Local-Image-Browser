@@ -53,77 +53,98 @@
         <Border x:Name="ControlsContainer" 
                 Grid.Row="1"
                 Visibility="Collapsed"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Bottom">
-            <!-- Make space for the hamburger button below -->
-            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <!-- Dynamic width -->
-                    <ColumnDefinition Width="Auto" />
-                    <!-- Fixed width for switch button -->
-                    <ColumnDefinition Width="*" />
-                    <!-- Dynamic width -->
-                </Grid.ColumnDefinitions>
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Margin="0,0,0,10">
 
-                <!-- Source folder controls -->
-                <StackPanel Orientation="Vertical" Grid.Column="0">
-                    <Button Content="Browse Source" 
+            <StackPanel Orientation="Horizontal" 
+                        HorizontalAlignment="Stretch">
+                
+                <!-- Left Side of the Panel-->
+                <Grid HorizontalAlignment="Stretch" Margin="0,0,20,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Source folder controls -->
+                    <Button Grid.Row="0"
                             Height="35" 
-                            Click="BrowseImageFolder_Click" 
+                            MinWidth="170"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Stretch"
                             Background="#333333" 
                             Foreground="White"
-                            HorizontalAlignment="Stretch"
-                            ToolTipService.ToolTip="Choose source folder" />
-                    <TextBox x:Name="ImageFolderPath" 
+                            ToolTipService.ToolTip="Choose source folder"
+                            Click="BrowseImageFolder_Click" 
+                            Content="Browse Source"/>
+                    <TextBox Grid.Row="0" Grid.Column="1"
                              Height="35"
-                             IsReadOnly="True"
+                             MinWidth="250"
+                             VerticalAlignment="Center"
+                             HorizontalAlignment="Stretch"
                              Background="#2e2e2e" 
                              Foreground="White"
+                             Margin="5,0,0,0"
                              TextAlignment="Left"
-                             VerticalAlignment="Center"
-                             Margin="0,5,0,0"
-                             HorizontalAlignment="Stretch" />
-                </StackPanel>
+                             IsReadOnly="True"
+                             x:Name="SourceFolderPath"/>
 
-                <!-- Switch button in the center -->
-                <Button Content="⇄" 
-                        Width="40" 
-                        Height="70" 
-                        Click="SwitchFolders_Click" 
-                        Background="#333333" 
-                        Foreground="White" 
-                        Margin="5,0,5,0"
-                        Grid.Column="1" 
-                        ToolTipService.ToolTip="Swap folders" />
-
-                <!-- Destination folder controls -->
-                <StackPanel Orientation="Vertical" Grid.Column="2">
-                    <Button Content="Browse Destination" 
+                    <!-- Switch button in the center -->
+                    <Button Grid.Row="1" Grid.ColumnSpan="2"
                             Height="35" 
-                            Click="BrowseDestinationFolder_Click" 
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Stretch"
                             Background="#333333" 
                             Foreground="White"
+                            Margin="0,5,0,5"
+                            ToolTipService.ToolTip="Swap folders"
+                            Click="SwitchFolders_Click"
+                            Content="⇅"/>
+
+                    <!-- Destination folder controls -->
+                    <Button Grid.Row="2"
+                            Height="35"
+                            MinWidth="170"
+                            VerticalAlignment="Center"
                             HorizontalAlignment="Stretch"
-                            ToolTipService.ToolTip="Choose destination folder" />
-                    <TextBox x:Name="DestinationFolderPath" 
+                            Background="#333333" 
+                            Foreground="White"
+                            ToolTipService.ToolTip="Choose destination folder"
+                            Click="BrowseDestinationFolder_Click"
+                            Content="Browse Destination"/>
+                    <TextBox Grid.Row="2" Grid.Column="1"
                              Height="35"
-                             IsReadOnly="True"
-                             Background="#2e2e2e" 
-                             Foreground="White" 
-                             TextAlignment="Left"
+                             MinWidth="250"
                              VerticalAlignment="Center"
-                             Margin="0,5,0,0"
-                             HorizontalAlignment="Stretch" />
-                </StackPanel>
-            </Grid>
+                             HorizontalAlignment="Stretch"
+                             Background="#2e2e2e" 
+                             Foreground="White"
+                             Margin="5,0,0,0"
+                             TextAlignment="Left"
+                             IsReadOnly="True"
+                             x:Name="DestinationFolderPath"/>
+                </Grid>
+
+                <!-- Right Side of the Panel-->
+                <ToggleSwitch x:Name="LoadTypeToggle" 
+                              OffContent="Synchronous Mode" 
+                              OnContent="Asynchronous Mode" 
+                              IsOn="False"/>
+            </StackPanel>
         </Border>
 
         <Border x:Name="ConversionContainer" 
-        Grid.Row="1"
-        Visibility="Collapsed"
-        HorizontalAlignment="Center"
-        VerticalAlignment="Center">
+                Grid.Row="1"
+                Visibility="Collapsed"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
             <!-- Main container grid -->
             <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10">
                 <!-- Define rows for ComboBoxes, TextBlocks, and button -->
@@ -196,12 +217,12 @@
                                    Foreground="White" 
                                    VerticalAlignment="Center" 
                                    Margin="0,0,5,0" />
-                        <ToggleSwitch x:Name="BulkConvertToggleButton" 
+                        <ToggleSwitch x:Name="BulkConvertToggle" 
                                       OffContent="No" 
                                       OnContent="Yes" 
                                       IsOn="False" 
                                       Foreground="White"
-                                      Toggled="BulkConvertToggleButton_Toggled" />
+                                      Toggled="BulkConvert_Toggled" />
                     </StackPanel>
                     <!-- Save to the same folder toggle -->
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">

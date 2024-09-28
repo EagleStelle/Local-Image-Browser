@@ -84,7 +84,7 @@ namespace App1
                         if (storageItem.IsOfType(StorageItemTypes.Folder))
                         {
                             // Folder dropped as source
-                            ImageFolderPath.Text = storageItem.Path; // Assuming you have a TextBox for source path
+                            SourceFolderPath.Text = storageItem.Path; // Assuming you have a TextBox for source path
                             LoadImagesFromFolder(storageItem.Path);   // Load images from the folder
                         }
                         else if (storageItem.IsOfType(StorageItemTypes.File))
@@ -94,7 +94,7 @@ namespace App1
                             if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png" || fileExtension == ".gif")
                             {
                                 var folderPath = Path.GetDirectoryName(storageItem.Path);
-                                ImageFolderPath.Text = folderPath; // Display the source folder path
+                                SourceFolderPath.Text = folderPath; // Display the source folder path
                                 LoadImagesFromFolder(folderPath);
 
                                 // Display the dropped image
@@ -195,7 +195,7 @@ namespace App1
             // Ensure UI updates are made on the main thread
             DispatcherQueue.TryEnqueue(() =>
             {
-                if (!string.IsNullOrEmpty(ImageFolderPath.Text))
+                if (!string.IsNullOrEmpty(SourceFolderPath.Text))
                 {
                     // Retry logic to wait for file access
                     const int maxRetries = 5;
@@ -205,7 +205,7 @@ namespace App1
                     {
                         try
                         {
-                            LoadImagesFromFolder(ImageFolderPath.Text);
+                            LoadImagesFromFolder(SourceFolderPath.Text);
                             break;  // If successful, break out of the loop
                         }
                         catch (IOException)
@@ -216,9 +216,21 @@ namespace App1
                 }
             });
         }
-
+        private void DisplayImage(int currentIndex)
+        {
+            if (LoadTypeToggle.IsOn)
+            {
+                // Async method
+                _ = DisplayImageAsync(currentIndex);
+            }
+            else
+            {
+                // Sync method
+                DisplayImageSync(currentIndex);
+            }
+        }
         // Method to display an image at the given index
-        private void DisplayImage(int index)
+        private void DisplayImageSync(int index)
         {
             if (index >= 0 && index < imageFiles.Count)
             {
@@ -288,28 +300,33 @@ namespace App1
                 }
             }
         }
-        // Event for the 'Next' button
+
+        // Main Controls
         private void NextImage_Click(object sender, RoutedEventArgs e)
         {
             if (imageFiles.Count > 0)
             {
                 ReleaseImageResources();  // Release current image resources
                 currentIndex = (currentIndex + 1) % imageFiles.Count;  // Loop to the first image when reaching the end
+
                 DisplayImage(currentIndex);
+
                 ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
             }
         }
-        // Event for the 'Previous' button
         private void PreviousImage_Click(object sender, RoutedEventArgs e)
         {
             if (imageFiles.Count > 0)
             {
                 ReleaseImageResources();  // Release current image resources
                 currentIndex = (currentIndex - 1 + imageFiles.Count) % imageFiles.Count;  // Loop to the last image when going before the first
+
                 DisplayImage(currentIndex);
+
                 ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
             }
         }
+
 
         // Methods for Directory
         private void HamburgerButton_Click(object sender, RoutedEventArgs e)
@@ -336,32 +353,32 @@ namespace App1
             var folder = await folderPicker.PickSingleFolderAsync();
             if (folder != null)
             {
-                ImageFolderPath.Text = folder.Path;  // Update the Image Folder Path textbox
+                SourceFolderPath.Text = folder.Path;  // Update the Image Folder Path textbox
                 LoadImagesFromFolder(folder.Path);  // Load all images from the selected folder
             }
         }
         private void SwitchFolders_Click(object sender, RoutedEventArgs e)
         {
             // Swap the paths of the source and destination folders
-            string temp = ImageFolderPath.Text;
-            ImageFolderPath.Text = DestinationFolderPath.Text;
+            string temp = SourceFolderPath.Text;
+            SourceFolderPath.Text = DestinationFolderPath.Text;
             DestinationFolderPath.Text = temp;
 
             // Update the destination folder variable
             destinationFolder = DestinationFolderPath.Text;
 
             // Update the FileSystemWatcher to monitor the new source folder
-            if (!string.IsNullOrEmpty(ImageFolderPath.Text))
+            if (!string.IsNullOrEmpty(SourceFolderPath.Text))
             {
                 // Disable the watcher to avoid conflicts during switching
                 fileWatcher.EnableRaisingEvents = false;
 
                 // Set the new folder to watch
-                fileWatcher.Path = ImageFolderPath.Text;
+                fileWatcher.Path = SourceFolderPath.Text;
                 fileWatcher.EnableRaisingEvents = true; // Re-enable the watcher
 
                 // Reload the images from the new source folder
-                LoadImagesFromFolder(ImageFolderPath.Text);
+                LoadImagesFromFolder(SourceFolderPath.Text);
             }
         }
         private async void BrowseDestinationFolder_Click(object sender, RoutedEventArgs e)
@@ -402,7 +419,7 @@ namespace App1
             }
 
             // Check if the toggle button is on for bulk conversion
-            if (BulkConvertToggleButton.IsOn)
+            if (BulkConvertToggle.IsOn)
             {
                 ComboBoxItem selectedSourceFormatItem = (ComboBoxItem)SourceExtensionComboBox.SelectedItem;
                 string sourceExtension = selectedSourceFormatItem?.Tag?.ToString();
@@ -458,7 +475,7 @@ namespace App1
             // Refresh and display the updated image list
             int previousIndex = currentIndex;
             string previousImagePath = imageFiles[currentIndex];
-            LoadImagesFromFolder(ImageFolderPath.Text);
+            LoadImagesFromFolder(SourceFolderPath.Text);
 
             currentIndex = imageFiles.IndexOf(previousImagePath);
             if (currentIndex == -1)
@@ -656,7 +673,7 @@ namespace App1
                             currentIndex = Math.Min(previousIndex, imageFiles.Count - 1);
 
                             // Refresh the folder contents to ensure up-to-date state
-                            LoadImagesFromFolder(ImageFolderPath.Text);
+                            LoadImagesFromFolder(SourceFolderPath.Text);
 
                             // Display the next or nearest image
                             DisplayImage(currentIndex);
@@ -695,10 +712,10 @@ namespace App1
             }
         }
 
-        private void BulkConvertToggleButton_Toggled(object sender, RoutedEventArgs e)
+        private void BulkConvert_Toggled(object sender, RoutedEventArgs e)
         {
             // Check if BulkConvertToggleButton is switched on
-            if (BulkConvertToggleButton.IsOn)
+            if (BulkConvertToggle.IsOn)
             {
                 // Make SourceFormatTextBlock and SourceExtensionComboBox visible
                 SourceFormatTextBlock.Visibility = Visibility.Visible;
