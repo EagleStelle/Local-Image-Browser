@@ -14,6 +14,8 @@
     <EnableMsixTooling>true</EnableMsixTooling>
     <PackageCertificateThumbprint>089C5A2245EDD269C6E55ADBFC12DD3E660F4A8B</PackageCertificateThumbprint>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+	<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+	<ApplicationIcon>Assets\Local Image Browser.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Content Remove="Assets\SmallTile.scale-100.png" />
@@ -39,16 +41,6 @@
     <Content Remove="Assets\Square44x44Logo.targetsize-256.png" />
     <Content Remove="Assets\Square44x44Logo.targetsize-32.png" />
     <Content Remove="Assets\Square44x44Logo.targetsize-48.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="Assets\SplashScreen.scale-200.png" />
-    <Content Include="Assets\LockScreenLogo.scale-200.png" />
-    <Content Include="Assets\Square150x150Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Content Include="Assets\StoreLogo.png" />
-    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
 
   <ItemGroup>
