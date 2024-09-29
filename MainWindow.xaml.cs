@@ -22,8 +22,6 @@ using Microsoft.UI.Xaml.Controls;
 using ImageMagick;
 using System.Diagnostics;
 using WinRT.Interop;
-using Windows.ApplicationModel;
-using System.Runtime.InteropServices;
 
 namespace App1
 {
@@ -38,6 +36,8 @@ namespace App1
         public MainWindow()
         {
             InitializeComponent();
+            SetTitleBar(AppTitleBar);
+            ExtendsContentIntoTitleBar = true;
 
             // Initialize FileSystemWatcher with default values
             fileWatcher = new FileSystemWatcher();

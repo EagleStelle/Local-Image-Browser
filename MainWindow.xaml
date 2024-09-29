@@ -5,30 +5,55 @@
     xmlns:local="using:App1"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Title="Local Image Browser">
+    mc:Ignorable="d">
 
-    <Grid x:Name="MainGrid"
-          Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" 
-          AllowDrop="True" 
-          Drop="OnDrop" 
-          DragOver="OnDragOver"
-          KeyDown="Grid_KeyDown">
+    <Grid KeyDown="Grid_KeyDown">
         <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Image display area -->
-        <Border Background="#2e2e2e" Grid.Row="0" Grid.ColumnSpan="3" Margin="10">
-            <Grid>
-                <!-- Image display -->
-                <Image x:Name="SelectedImage" 
+        <Grid x:Name="AppTitleBar"
+              Height="32">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="LeftPaddingColumn" Width="0"/>
+                <ColumnDefinition x:Name="IconColumn" Width="Auto"/>
+                <ColumnDefinition x:Name="TitleColumn" Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Image x:Name="TitleBarIcon" 
+                   Source="ms-appx:///Assets/Square44x44Logo.scale-200.png"
+                   Grid.Column="1"
+                   Width="16" Height="16"
+                   Margin="8,0,4,0"/>
+            <TextBlock x:Name="TitleBarTextBlock"
+                       Text="Local Image Browser" 
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Grid.Column="2"
+                       VerticalAlignment="Center"/>
+        </Grid>
+
+        <Grid x:Name="MainGrid"
+              Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" 
+              AllowDrop="True" 
+              Drop="OnDrop" 
+              DragOver="OnDragOver"
+              KeyDown="Grid_KeyDown"
+              Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Image display area -->
+            <Border Background="#2e2e2e" Grid.Row="0" Grid.ColumnSpan="3" Margin="10">
+                <Grid>
+                    <!-- Image display -->
+                    <Image x:Name="SelectedImage" 
                        Stretch="Uniform"/>
 
-                <!-- Previous Button on the left side -->
-                <Button x:Name="PreviousButton"
+                    <!-- Previous Button on the left side -->
+                    <Button x:Name="PreviousButton"
                         Content="Previous"
                         Width="100"
                         VerticalAlignment="Stretch"
@@ -37,8 +62,8 @@
                         Background="#333333"
                         Foreground="White"/>
 
-                <!-- Next Button on the right side -->
-                <Button x:Name="NextButton"
+                    <!-- Next Button on the right side -->
+                    <Button x:Name="NextButton"
                         Content="Next"
                         Width="100"
                         VerticalAlignment="Stretch"
@@ -46,35 +71,35 @@
                         Click="NextImage_Click"
                         Background="#333333"
                         Foreground="White"/>
-            </Grid>
-        </Border>
+                </Grid>
+            </Border>
 
-        <!-- Controls container, placed just above the hamburger button -->
-        <Border x:Name="ControlsContainer" 
+            <!-- Controls container, placed just above the hamburger button -->
+            <Border x:Name="ControlsContainer" 
                 Grid.Row="1"
                 Visibility="Collapsed"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"
                 Margin="0,0,0,10">
 
-            <StackPanel Orientation="Horizontal" 
+                <StackPanel Orientation="Horizontal" 
                         HorizontalAlignment="Stretch">
-                
-                <!-- Left Side of the Panel-->
-                <Grid HorizontalAlignment="Stretch" Margin="0,0,20,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
 
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                    <!-- Left Side of the Panel-->
+                    <Grid HorizontalAlignment="Stretch" Margin="0,0,20,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                    <!-- Source folder controls -->
-                    <Button Grid.Row="0"
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Source folder controls -->
+                        <Button Grid.Row="0"
                             Height="35" 
                             MinWidth="170"
                             VerticalAlignment="Center"
@@ -84,7 +109,7 @@
                             ToolTipService.ToolTip="Choose source folder"
                             Click="BrowseImageFolder_Click" 
                             Content="Browse Source"/>
-                    <TextBox Grid.Row="0" Grid.Column="1"
+                        <TextBox Grid.Row="0" Grid.Column="1"
                              Height="35"
                              MinWidth="250"
                              VerticalAlignment="Center"
@@ -96,8 +121,8 @@
                              IsReadOnly="True"
                              x:Name="SourceFolderPath"/>
 
-                    <!-- Switch button in the center -->
-                    <Button Grid.Row="1" Grid.ColumnSpan="2"
+                        <!-- Switch button in the center -->
+                        <Button Grid.Row="1" Grid.ColumnSpan="2"
                             Height="35" 
                             VerticalAlignment="Center"
                             HorizontalAlignment="Stretch"
@@ -108,8 +133,8 @@
                             Click="SwitchFolders_Click"
                             Content="⇅"/>
 
-                    <!-- Destination folder controls -->
-                    <Button Grid.Row="2"
+                        <!-- Destination folder controls -->
+                        <Button Grid.Row="2"
                             Height="35"
                             MinWidth="170"
                             VerticalAlignment="Center"
@@ -119,7 +144,7 @@
                             ToolTipService.ToolTip="Choose destination folder"
                             Click="BrowseDestinationFolder_Click"
                             Content="Browse Destination"/>
-                    <TextBox Grid.Row="2" Grid.Column="1"
+                        <TextBox Grid.Row="2" Grid.Column="1"
                              Height="35"
                              MinWidth="250"
                              VerticalAlignment="Center"
@@ -130,45 +155,45 @@
                              TextAlignment="Left"
                              IsReadOnly="True"
                              x:Name="DestinationFolderPath"/>
-                </Grid>
+                    </Grid>
 
-                <!-- Right Side of the Panel-->
-                <ToggleSwitch x:Name="LoadTypeToggle" 
+                    <!-- Right Side of the Panel-->
+                    <ToggleSwitch x:Name="LoadTypeToggle" 
                               OffContent="Synchronous Mode" 
                               OnContent="Asynchronous Mode" 
                               IsOn="False"/>
-            </StackPanel>
-        </Border>
+                </StackPanel>
+            </Border>
 
-        <Border x:Name="ConversionContainer" 
+            <Border x:Name="ConversionContainer" 
                 Grid.Row="1"
                 Visibility="Collapsed"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center">
-            <!-- Main container grid -->
-            <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10">
-                <!-- Define rows for ComboBoxes, TextBlocks, and button -->
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+                <!-- Main container grid -->
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10">
+                    <!-- Define rows for ComboBoxes, TextBlocks, and button -->
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                <!-- Define columns; let widths adjust dynamically -->
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+                    <!-- Define columns; let widths adjust dynamically -->
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                <!-- Source Format (dynamically hidden) -->
-                <TextBlock x:Name="SourceFormatTextBlock"
+                    <!-- Source Format (dynamically hidden) -->
+                    <TextBlock x:Name="SourceFormatTextBlock"
                            Grid.Column="0"
                            Grid.Row="0"
                            Text="Source Format:" 
                            Foreground="White" 
                            Visibility="Collapsed" />
-                <ComboBox x:Name="SourceExtensionComboBox" 
+                    <ComboBox x:Name="SourceExtensionComboBox" 
                           Grid.Column="0"
                           Grid.Row="1"
                           Width="150" 
@@ -177,22 +202,22 @@
                           SelectedIndex="0"
                           Margin="0,0,5,5"
                           Visibility="Collapsed">
-                    <ComboBoxItem Content="PNG" Tag=".png" />
-                    <ComboBoxItem Content="JPG" Tag=".jpg" />
-                    <ComboBoxItem Content="JPEG" Tag=".jpeg" />
-                    <ComboBoxItem Content="GIF" Tag=".gif" />
-                    <ComboBoxItem Content="WEBP" Tag=".webp" />
-                    <ComboBoxItem Content="BMP" Tag=".bmp" />
-                    <ComboBoxItem Content="ICO" Tag=".ico" />
-                </ComboBox>
+                        <ComboBoxItem Content="PNG" Tag=".png" />
+                        <ComboBoxItem Content="JPG" Tag=".jpg" />
+                        <ComboBoxItem Content="JPEG" Tag=".jpeg" />
+                        <ComboBoxItem Content="GIF" Tag=".gif" />
+                        <ComboBoxItem Content="WEBP" Tag=".webp" />
+                        <ComboBoxItem Content="BMP" Tag=".bmp" />
+                        <ComboBoxItem Content="ICO" Tag=".ico" />
+                    </ComboBox>
 
-                <!-- Output Format -->
-                <TextBlock Grid.Column="1"
+                    <!-- Output Format -->
+                    <TextBlock Grid.Column="1"
                            Grid.Row="0"
                            Text="Output Format:" 
                            Foreground="White" />
 
-                <ComboBox x:Name="OutputExtensionComboBox" 
+                    <ComboBox x:Name="OutputExtensionComboBox" 
                           Grid.Column="1"
                           Grid.Row="1"
                           Width="150" 
@@ -200,46 +225,46 @@
                           Foreground="White"
                           SelectedIndex="0"
                           Margin="0,0,0,5">
-                    <ComboBoxItem Content="PNG" Tag=".png" />
-                    <ComboBoxItem Content="JPG" Tag=".jpg" />
-                    <ComboBoxItem Content="JPEG" Tag=".jpeg" />
-                    <ComboBoxItem Content="GIF" Tag=".gif" />
-                    <ComboBoxItem Content="WEBP" Tag=".webp" />
-                    <ComboBoxItem Content="BMP" Tag=".bmp" />
-                    <ComboBoxItem Content="ICO" Tag=".ico" />
-                </ComboBox>
+                        <ComboBoxItem Content="PNG" Tag=".png" />
+                        <ComboBoxItem Content="JPG" Tag=".jpg" />
+                        <ComboBoxItem Content="JPEG" Tag=".jpeg" />
+                        <ComboBoxItem Content="GIF" Tag=".gif" />
+                        <ComboBoxItem Content="WEBP" Tag=".webp" />
+                        <ComboBoxItem Content="BMP" Tag=".bmp" />
+                        <ComboBoxItem Content="ICO" Tag=".ico" />
+                    </ComboBox>
 
-                <!-- StackPanel for toggles -->
-                <StackPanel Grid.Column="2" Grid.RowSpan="2" Orientation="Vertical" VerticalAlignment="Center" Margin="15,0,0,0">
-                    <!-- Bulk convert toggle -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
-                        <TextBlock Text="Bulk Convert:" 
+                    <!-- StackPanel for toggles -->
+                    <StackPanel Grid.Column="2" Grid.RowSpan="2" Orientation="Vertical" VerticalAlignment="Center" Margin="15,0,0,0">
+                        <!-- Bulk convert toggle -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                            <TextBlock Text="Bulk Convert:" 
                                    Foreground="White" 
                                    VerticalAlignment="Center" 
                                    Margin="0,0,5,0" />
-                        <ToggleSwitch x:Name="BulkConvertToggle" 
+                            <ToggleSwitch x:Name="BulkConvertToggle" 
                                       OffContent="No" 
                                       OnContent="Yes" 
                                       IsOn="False" 
                                       Foreground="White"
                                       Toggled="BulkConvert_Toggled" />
-                    </StackPanel>
-                    <!-- Save to the same folder toggle -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                        <TextBlock Text="Same Folder:" 
+                        </StackPanel>
+                        <!-- Save to the same folder toggle -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Text="Same Folder:" 
                                    Foreground="White" 
                                    VerticalAlignment="Center" 
                                    Margin="0,0,5,0" />
-                        <ToggleSwitch x:Name="SaveToSameFolderToggle" 
+                            <ToggleSwitch x:Name="SaveToSameFolderToggle" 
                                       OffContent="No" 
                                       OnContent="Yes" 
                                       IsOn="False" 
                                       Foreground="White" />
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
 
-                <!-- Convert Image button (stretches across columns) -->
-                <Button Grid.Row="2"
+                    <!-- Convert Image button (stretches across columns) -->
+                    <Button Grid.Row="2"
                         Grid.ColumnSpan="3"
                         Content="Convert Image" 
                         Click="ConvertImage_Click" 
@@ -247,19 +272,19 @@
                         Height="35" 
                         Background="#333333" 
                         Foreground="White"/>
-            </Grid>
-        </Border>
+                </Grid>
+            </Border>
 
-        <!-- Hamburger button stack panel at the very bottom -->
-        <Border Grid.Row="2"
+            <!-- Hamburger button stack panel at the very bottom -->
+            <Border Grid.Row="2"
                 Background="#333333" 
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Bottom">
-            <Grid HorizontalAlignment="Stretch"
+                <Grid HorizontalAlignment="Stretch"
                   VerticalAlignment="Center">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                    <!-- Hamburger Button -->
-                    <Button Content="📂"
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <!-- Hamburger Button -->
+                        <Button Content="📂"
                             Width="40" 
                             Height="30" 
                             FontSize="12"
@@ -269,7 +294,7 @@
                             Click="HamburgerButton_Click"
                             ToolTipService.ToolTip="Show directory panel" />
 
-                    <Button Content="🔄"
+                        <Button Content="🔄"
                             Width="40" 
                             Height="30" 
                             FontSize="12"
@@ -279,8 +304,8 @@
                             Click="ConversionButton_Click"
                             ToolTipService.ToolTip="Show conversion panel" />
 
-                    <!-- Move Button -->
-                    <Button Content="📋"
+                        <!-- Move Button -->
+                        <Button Content="📋"
                             Width="40" 
                             Height="30" 
                             FontSize="12"
@@ -292,8 +317,8 @@
                             Foreground="White"
                             ToolTipService.ToolTip="Move this image" />
 
-                    <!-- Delete Button -->
-                    <Button Content="🗑"
+                        <!-- Delete Button -->
+                        <Button Content="🗑"
                             Width="40" 
                             Height="30" 
                             FontSize="12"
@@ -304,9 +329,9 @@
                             Background="#333333" 
                             Foreground="White"
                             ToolTipService.ToolTip="Delete this image" />
-                </StackPanel>
+                    </StackPanel>
 
-                <TextBlock x:Name="ImageFileName" 
+                    <TextBlock x:Name="ImageFileName" 
                            HorizontalAlignment="Center" 
                            FontSize="18" 
                            Foreground="White"
@@ -314,26 +339,27 @@
                            DoubleTapped="ImageFileName_DoubleTapped" 
                            ToolTipService.ToolTip="Double click to rename" />
 
-                <TextBox x:Name="RenameTextBox" 
+                    <TextBox x:Name="RenameTextBox" 
                          HorizontalAlignment="Center" 
                          Visibility="Collapsed" 
                          KeyDown="RenameTextBox_KeyDown" 
                          LostFocus="RenameTextBox_LostFocus" />
 
-                <TextBlock x:Name="ImageCount" 
+                    <TextBlock x:Name="ImageCount" 
                            HorizontalAlignment="Right" 
                            VerticalAlignment="Center" 
                            Foreground="White" 
                            Margin="0,0,5,0" 
                            Grid.Column="2"
                            DoubleTapped="ImageCount_DoubleTapped" />
-                <TextBox x:Name="JumpToTextBox" 
+                    <TextBox x:Name="JumpToTextBox" 
                          HorizontalAlignment="Right" 
                          TextAlignment="Center"
                          Visibility="Collapsed" 
                          KeyDown="JumpToTextBox_KeyDown" 
                          LostFocus="JumpToTextBox_LostFocus" />
-            </Grid>
-        </Border>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </Window>
