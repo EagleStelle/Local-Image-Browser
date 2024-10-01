@@ -107,84 +107,102 @@
 
                             <!-- Source folder controls -->
                             <Button Grid.Row="0"
-                            Height="35" 
-                            MinWidth="170"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Stretch"
-                            Background="#333333" 
-                            Foreground="White"
-                            ToolTipService.ToolTip="Choose source folder"
-                            Click="BrowseImageFolder_Click" 
-                            Content="Browse Source"/>
+                                    Height="35" 
+                                    MinWidth="170"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Stretch"
+                                    Background="#333333" 
+                                    Foreground="White"
+                                    ToolTipService.ToolTip="Choose source folder"
+                                    Click="BrowseImageFolder_Click" 
+                                    Content="Browse Source"/>
                             <TextBox Grid.Row="0" Grid.Column="1"
-                             Height="35"
-                             MinWidth="250"
-                             VerticalAlignment="Center"
-                             HorizontalAlignment="Stretch"
-                             Background="#2e2e2e" 
-                             Foreground="White"
-                             Margin="5,0,0,0"
-                             TextAlignment="Left"
-                             IsReadOnly="True"
-                             x:Name="SourceFolderPath"/>
+                                     Height="35"
+                                     MinWidth="250"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Stretch"
+                                     Background="#2e2e2e" 
+                                     Foreground="White"
+                                     Margin="5,0,0,0"
+                                     TextAlignment="Left"
+                                     IsReadOnly="True"
+                                     x:Name="SourceFolderPath"/>
 
                             <!-- Switch button in the center -->
                             <Button Grid.Row="1" Grid.ColumnSpan="2"
-                            Height="35" 
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Stretch"
-                            Background="#333333" 
-                            Foreground="White"
-                            Margin="0,5,0,5"
-                            ToolTipService.ToolTip="Swap folders"
-                            Click="SwitchFolders_Click"
-                            Content="⇅"/>
+                                    Height="35" 
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Stretch"
+                                    Background="#333333" 
+                                    Foreground="White"
+                                    Margin="0,5,0,5"
+                                    ToolTipService.ToolTip="Swap folders"
+                                    Click="SwitchFolders_Click"
+                                    Content="⇅"/>
 
                             <!-- Destination folder controls -->
                             <Button Grid.Row="2"
-                            Height="35"
-                            MinWidth="170"
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Stretch"
-                            Background="#333333" 
-                            Foreground="White"
-                            ToolTipService.ToolTip="Choose destination folder"
-                            Click="BrowseDestinationFolder_Click"
-                            Content="Browse Destination"/>
+                                    Height="35"
+                                    MinWidth="170"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Stretch"
+                                    Background="#333333" 
+                                    Foreground="White"
+                                    ToolTipService.ToolTip="Choose destination folder"
+                                    Click="BrowseDestinationFolder_Click"
+                                    Content="Browse Destination"/>
                             <TextBox Grid.Row="2" Grid.Column="1"
-                             Height="35"
-                             MinWidth="250"
-                             VerticalAlignment="Center"
-                             HorizontalAlignment="Stretch"
-                             Background="#2e2e2e" 
-                             Foreground="White"
-                             Margin="5,0,0,0"
-                             TextAlignment="Left"
-                             IsReadOnly="True"
-                             x:Name="DestinationFolderPath"/>
+                                     Height="35"
+                                     MinWidth="250"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Stretch"
+                                     Background="#2e2e2e" 
+                                     Foreground="White"
+                                     Margin="5,0,0,0"
+                                     TextAlignment="Left"
+                                     IsReadOnly="True"
+                                     x:Name="DestinationFolderPath"/>
                         </Grid>
 
                         <!-- Right Side of the Panel-->
                         <ToggleSwitch x:Name="LoadTypeToggle" 
-                              OffContent="Synchronous Mode" 
-                              OnContent="Asynchronous Mode" 
-                              IsOn="False"/>
+                                      OffContent="Synchronous Mode" 
+                                      OnContent="Asynchronous Mode" 
+                                      IsOn="False"/>
                     </StackPanel>
 
                     <!-- Right Side: GridView for the gallery -->
-                    <ScrollViewer Grid.Column="1"
-                                  HorizontalScrollBarVisibility="Auto"
-                                  VerticalScrollBarVisibility="Disabled"
-                                  HorizontalAlignment="Stretch">
+                    <Grid x:Name="GalleryGrid"
+                          Grid.Column="1"
+                          Background="#1f1f1f"
+                          PointerEntered="GalleryGrid_PointerEntered"
+                          PointerExited="GalleryGrid_PointerExited">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Previous button on the left -->
+                        <Button x:Name="GridView_PreviousButton"
+                                Content="❮" 
+                                Width="50" 
+                                Height="50"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Grid.Column="0"
+                                Visibility="Collapsed"
+                                Click="GridView_PreviousButton_Click"/>
+
+                        <!-- GridView in the center -->
                         <GridView Name="ImageGridView"
                                   SelectionMode="Single"
                                   SelectionChanged="ImageGridView_SelectionChanged"
-                                  HorizontalAlignment="Stretch"
                                   MinWidth="{Binding ActualWidth, ElementName=MainGrid}"
-                                  ScrollViewer.HorizontalScrollMode="Enabled"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                  ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                                  ScrollViewer.VerticalScrollMode="Disabled">
+                                  MaxWidth="{Binding ActualWidth, ElementName=MainGrid}"
+                                  HorizontalAlignment="Stretch"
+                                  Grid.Column="1"
+                                  VerticalAlignment="Center">
                             <GridView.ItemTemplate>
                                 <DataTemplate>
                                     <Image Source="{Binding}" 
@@ -194,14 +212,27 @@
                                 </DataTemplate>
                             </GridView.ItemTemplate>
 
-                            <!-- Ensure GridView items are wrapped horizontally -->
                             <GridView.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <ItemsWrapGrid Orientation="Horizontal"/>
+                                    <ItemsWrapGrid Orientation="Horizontal" 
+                                                   MaximumRowsOrColumns="10"
+                                                   ItemWidth="100"
+                                                   ItemHeight="100"/>
                                 </ItemsPanelTemplate>
                             </GridView.ItemsPanel>
                         </GridView>
-                    </ScrollViewer>
+
+                        <!-- Next button on the right -->
+                        <Button x:Name="GridView_NextButton"
+                                Content="❯"
+                                Width="50"
+                                Height="50"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Grid.Column="2"
+                                Visibility="Collapsed"
+                                Click="GridView_NextButton_Click"/>
+                    </Grid>
                 </Grid>
             </Border>
 

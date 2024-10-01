@@ -22,6 +22,8 @@ using Microsoft.UI.Xaml.Controls;
 using ImageMagick;
 using System.Diagnostics;
 using WinRT.Interop;
+using static System.Net.Mime.MediaTypeNames;
+using Windows.Devices.Input;
 
 namespace App1
 {
@@ -156,31 +158,10 @@ namespace App1
                                file.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".tiff", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".jfif", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".jpeg_large", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".ico", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".heic", StringComparison.OrdinalIgnoreCase))
-                .OrderBy(file => new System.Text.RegularExpressions.Regex(@"\d+").Matches(Path.GetFileNameWithoutExtension(file))
-                    .Cast<System.Text.RegularExpressions.Match>()
-                    .Select(m =>
-                    {
-                        if (long.TryParse(m.Value, out long num))
-                        {
-                            return num;
-                        }
-                        return 0;
-                    })
-                    .DefaultIfEmpty(0)
-                    .First())
-                .ThenBy(file => file)
+                               file.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            // Populate the GridView with images
-            ImageGridView.ItemsSource = imageFiles.Select(f => new BitmapImage(new Uri(f))).ToList();
+            LoadPage(0); // Load the first page of images
 
             if (imageFiles.Count > 0)
             {
@@ -226,18 +207,117 @@ namespace App1
                 }
             });
         }
+
+        // Grid view gallery
+        private const int PageSize = 10;
+        private int currentPage = 0;
+        // Method to load a specific page of images
+        private void LoadPage(int pageIndex)
+        {
+            currentPage = pageIndex;
+            var pageItems = imageFiles.Skip(pageIndex * PageSize).Take(PageSize).ToList();
+            ImageGridView.ItemsSource = pageItems.Select(f => new BitmapImage(new Uri(f))).ToList();
+        }
+
+        // Sync the ScrollViewer with the selected item and update the GridView
         private void ImageGridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ImageGridView.SelectedItem != null)
             {
-                if (ImageGridView.SelectedItem != null)
-                {
-                    string selectedImagePath = imageFiles[ImageGridView.SelectedIndex];
-                    SelectedImage.Source = new BitmapImage(new Uri(selectedImagePath));
-                    currentIndex = ImageGridView.SelectedIndex;  // Update the index
-                }
+                currentIndex = (currentPage * PageSize) + ImageGridView.SelectedIndex;  // Update the global index
+                DisplayImage(currentIndex);  // Update main image
+                ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
+
+                // Ensure the ScrollViewer follows the selected image
+                ImageGridView.ScrollIntoView(ImageGridView.SelectedItem, ScrollIntoViewAlignment.Leading);
             }
         }
+
+        private void GridView_NextButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Navigate to the next set of images with circular navigation
+            currentIndex = (currentIndex + 10) % imageFiles.Count;
+            DisplayCurrentImages();
+        }
+
+        private void GridView_PreviousButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Navigate to the previous set of images with circular navigation
+            currentIndex = (currentIndex - 10 + imageFiles.Count) % imageFiles.Count;
+            DisplayCurrentImages();
+        }
+
+        private void GalleryGrid_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            GridView_NextButton.Visibility = Visibility.Visible;
+            GridView_PreviousButton.Visibility = Visibility.Visible;
+        }
+        private void GalleryGrid_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            GridView_NextButton.Visibility = Visibility.Collapsed;
+            GridView_PreviousButton.Visibility = Visibility.Collapsed;
+        }
+
+        private void DisplayCurrentImages()
+        {
+            var imagesToDisplay = imageFiles.Skip(currentIndex).Take(10).ToList();
+            ImageGridView.ItemsSource = imagesToDisplay;
+        }
+
+        // Adjust Next and Previous buttons to handle paging
+        private void NextImage_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentIndex < imageFiles.Count - 1)
+            {
+                currentIndex++;
+            }
+            else
+            {
+                // If at the last image, go to the first
+                currentIndex = 0;
+            }
+
+            UpdateSelection();
+        }
+
+        private void PreviousImage_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentIndex > 0)
+            {
+                currentIndex--;
+            }
+            else
+            {
+                // If at the first image, go to the last
+                currentIndex = imageFiles.Count - 1;
+            }
+
+            UpdateSelection();
+        }
+
+        private void UpdateSelection()
+        {
+            // Load the appropriate page and scroll to the selected image
+            int pageIndex = currentIndex / 10;
+            LoadPage(pageIndex);
+
+            // Ensure the selected image is visible in the GridView and update the display
+            ImageGridView.SelectedIndex = currentIndex % 10;
+            ScrollIntoView(ImageGridView.SelectedItem);
+            UpdateCurrentIndexTextBlock();
+        }
+        private void ScrollIntoView(object selectedItem)
+        {
+            if (selectedItem != null)
+            {
+                ImageGridView.ScrollIntoView(selectedItem);
+            }
+        }
+        private void UpdateCurrentIndexTextBlock()
+        {
+            ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
+        }
+
 
         // Method to display an image at the given index
         private void DisplayImage(int currentIndex)
@@ -306,33 +386,6 @@ namespace App1
                 ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
             }
         }
-
-        // Main Controls
-        private void NextImage_Click(object sender, RoutedEventArgs e)
-        {
-            if (imageFiles.Count > 0)
-            {
-                ReleaseCurrentResources();
-                currentIndex = (currentIndex + 1) % imageFiles.Count;  // Loop to the first image when reaching the end
-
-                DisplayImage(currentIndex);
-
-                ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
-            }
-        }
-        private void PreviousImage_Click(object sender, RoutedEventArgs e)
-        {
-            if (imageFiles.Count > 0)
-            {
-                ReleaseCurrentResources();
-                currentIndex = (currentIndex - 1 + imageFiles.Count) % imageFiles.Count;  // Loop to the last image when going before the first
-
-                DisplayImage(currentIndex);
-
-                ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
-            }
-        }
-
 
         // Methods for Directory
         private void HamburgerButton_Click(object sender, RoutedEventArgs e)
@@ -857,54 +910,7 @@ namespace App1
             ImageFileName.Visibility = Visibility.Visible;
         }
 
-        // Misc Controls
-        private void CenterWindow()
-        {
-            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            var windowId = Win32Interop.GetWindowIdFromWindow(hWnd);
-            var appWindow = AppWindow.GetFromWindowId(windowId);
-
-            var displayArea = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary);
-            var centerX = (displayArea.WorkArea.Width - appWindow.Size.Width) / 2;
-            var centerY = (displayArea.WorkArea.Height - appWindow.Size.Height) / 2;
-
-            appWindow.Move(new PointInt32(centerX, centerY));
-        }
-        private void PlaySound(string soundFilePath)
-        {
-            try
-            {
-                mediaPlayer.Source = MediaSource.CreateFromUri(new Uri(soundFilePath));
-                mediaPlayer.Play();
-            }
-            catch (Exception ex)
-            {
-                var dialog = new MessageDialog($"Error playing sound: {ex.Message}");
-            }
-        }
-        private async Task ShowMessage(string message)
-        {
-            // Ensure dialog is only shown once at a time
-            ContentDialog dialog = new ContentDialog
-            {
-                Title = "Notification",
-                Content = message,
-                CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot // Use the current XamlRoot in WinUI 3
-            };
-
-            try
-            {
-                await dialog.ShowAsync();
-            }
-            catch (Exception ex)
-            {
-                // Catch and log any unexpected errors from the dialog system
-                Debug.WriteLine($"Error showing dialog: {ex.Message}");
-            }
-        }
-
-        // Release image resources when the directory changes
+        // Memory Management
         private async Task ReleaseImageResources()
         {
             // Perform release and garbage collection asynchronously
@@ -949,7 +955,6 @@ namespace App1
                 GC.WaitForPendingFinalizers();
             });
         }
-
         private void ReleaseCurrentResources()
         {
             if (SelectedImage.Source != null)
@@ -1004,6 +1009,53 @@ namespace App1
                 {
                     DeleteImage_Click(sender, e);  // Trigger Delete button when Alt + S is pressed
                 }
+            }
+        }
+
+        // Misc Controls
+        private void CenterWindow()
+        {
+            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            var windowId = Win32Interop.GetWindowIdFromWindow(hWnd);
+            var appWindow = AppWindow.GetFromWindowId(windowId);
+
+            var displayArea = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary);
+            var centerX = (displayArea.WorkArea.Width - appWindow.Size.Width) / 2;
+            var centerY = (displayArea.WorkArea.Height - appWindow.Size.Height) / 2;
+
+            appWindow.Move(new PointInt32(centerX, centerY));
+        }
+        private void PlaySound(string soundFilePath)
+        {
+            try
+            {
+                mediaPlayer.Source = MediaSource.CreateFromUri(new Uri(soundFilePath));
+                mediaPlayer.Play();
+            }
+            catch (Exception ex)
+            {
+                var dialog = new MessageDialog($"Error playing sound: {ex.Message}");
+            }
+        }
+        private async Task ShowMessage(string message)
+        {
+            // Ensure dialog is only shown once at a time
+            ContentDialog dialog = new ContentDialog
+            {
+                Title = "Notification",
+                Content = message,
+                CloseButtonText = "OK",
+                XamlRoot = this.Content.XamlRoot // Use the current XamlRoot in WinUI 3
+            };
+
+            try
+            {
+                await dialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                // Catch and log any unexpected errors from the dialog system
+                Debug.WriteLine($"Error showing dialog: {ex.Message}");
             }
         }
     }
