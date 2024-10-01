@@ -143,8 +143,14 @@ namespace App1
         }
 
         // Load all image files from the selected folder
-        private void LoadImagesFromFolder(string folderPath)
+        private async void LoadImagesFromFolder(string folderPath)
         {
+            // Check if the folder path has changed before releasing resources
+            if (SourceFolderPath.Text != folderPath)
+            {
+                await ReleaseImageResources();
+            }
+
             imageFiles = Directory.GetFiles(folderPath, "*.*")
                 .Where(file => file.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
@@ -220,7 +226,6 @@ namespace App1
                 }
             });
         }
-
         private void ImageGridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ImageGridView.SelectedItem != null)
@@ -237,6 +242,8 @@ namespace App1
         // Method to display an image at the given index
         private void DisplayImage(int currentIndex)
         {
+            ReleaseCurrentResources(); // Release resources before loading a new image
+
             if (LoadTypeToggle.IsOn)
             {
                 // Async method
@@ -268,17 +275,8 @@ namespace App1
 
                 // Update image count display without modifying currentIndex
                 ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
-
-                // Garbage collection (optimized for performance)
-                if (index % 10 == 0)  // Collect every 10 images to avoid frequent calls
-                {
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
-                    GC.Collect();
-                }
             }
         }
-
         private async Task DisplayImageAsync(int index)
         {
             if (index >= 0 && index < imageFiles.Count)
@@ -287,9 +285,6 @@ namespace App1
 
                 // Display the file name on top
                 ImageFileName.Text = Path.GetFileName(selectedImagePath);
-
-                // Keep the current image displayed while loading the new one
-                var currentImageSource = SelectedImage.Source;
 
                 // Load the new image in the background
                 BitmapImage bitmap = new BitmapImage();
@@ -309,14 +304,6 @@ namespace App1
 
                 // Update image count display
                 ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
-
-                // Garbage collection (optimized for performance)
-                if (index % 10 == 0)  // Collect every 10 images to avoid frequent calls
-                {
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
-                    GC.Collect();
-                }
             }
         }
 
@@ -325,7 +312,7 @@ namespace App1
         {
             if (imageFiles.Count > 0)
             {
-                ReleaseImageResources();  // Release current image resources
+                ReleaseCurrentResources();
                 currentIndex = (currentIndex + 1) % imageFiles.Count;  // Loop to the first image when reaching the end
 
                 DisplayImage(currentIndex);
@@ -337,7 +324,7 @@ namespace App1
         {
             if (imageFiles.Count > 0)
             {
-                ReleaseImageResources();  // Release current image resources
+                ReleaseCurrentResources();
                 currentIndex = (currentIndex - 1 + imageFiles.Count) % imageFiles.Count;  // Loop to the last image when going before the first
 
                 DisplayImage(currentIndex);
@@ -526,7 +513,7 @@ namespace App1
 
             try
             {
-                ReleaseImageResources();
+                ReleaseCurrentResources();
                 fileWatcher.EnableRaisingEvents = false;
 
                 await Task.Run(() =>
@@ -582,7 +569,7 @@ namespace App1
                     try
                     {
                         // Release the image resources before moving
-                        ReleaseImageResources();
+                        ReleaseCurrentResources();
 
                         // Disable FileSystemWatcher before moving the file
                         fileWatcher.EnableRaisingEvents = false;
@@ -673,7 +660,7 @@ namespace App1
                     try
                     {
                         // Release image resources before deleting
-                        ReleaseImageResources();
+                        ReleaseCurrentResources();
 
                         // Save the current index and image path
                         int previousIndex = currentIndex;
@@ -796,7 +783,7 @@ namespace App1
                     if (targetIndex >= 0 && targetIndex < imageFiles.Count)
                     {
                         // Update the current index and display the corresponding image
-                        ReleaseImageResources();
+                        ReleaseCurrentResources();
                         currentIndex = targetIndex;
                         DisplayImage(currentIndex);
 
@@ -917,19 +904,64 @@ namespace App1
             }
         }
 
-        private void ReleaseImageResources()
+        // Release image resources when the directory changes
+        private async Task ReleaseImageResources()
+        {
+            // Perform release and garbage collection asynchronously
+            await Task.Run(() =>
+            {
+                // Clear the image currently being shown
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (SelectedImage.Source is BitmapImage bitmapImage)
+                    {
+                        bitmapImage.UriSource = null;  // Clear the image source
+                        SelectedImage.Source = null;   // Set the image to null
+                    }
+                });
+
+                // Clear GridView items (also holds BitmapImage objects)
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (ImageGridView.ItemsSource is IEnumerable<BitmapImage> imageGridSource)
+                    {
+                        foreach (var gridImage in imageGridSource)
+                        {
+                            gridImage.UriSource = null;  // Clear image resources
+                        }
+                    }
+
+                    ImageGridView.ItemsSource = null;  // Clear the image grid
+                });
+
+                // Clear the image list in memory
+                imageFiles?.Clear();
+
+                // Stop file watcher events
+                if (fileWatcher != null)
+                {
+                    fileWatcher.EnableRaisingEvents = false;
+                    fileWatcher.Path = string.Empty;
+                }
+
+                // Perform garbage collection to release memory
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            });
+        }
+
+        private void ReleaseCurrentResources()
         {
             if (SelectedImage.Source != null)
             {
-                // Release the current image source to free up memory
                 SelectedImage.Source = null;
-
-                // Force garbage collection
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
             }
+
+            // Trigger garbage collection only for current image
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
+
         private void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             // Check if Alt is pressed using InputKeyboardSource
