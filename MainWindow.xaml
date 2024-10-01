@@ -50,7 +50,7 @@
                 <Grid>
                     <!-- Image display -->
                     <Image x:Name="SelectedImage" 
-                       Stretch="Uniform"/>
+                           Stretch="Uniform"/>
 
                     <!-- Previous Button on the left side -->
                     <Button x:Name="PreviousButton"
@@ -76,21 +76,22 @@
 
             <!-- Controls container, placed just above the hamburger button -->
             <Border x:Name="ControlsContainer" 
-                Grid.Row="1"
-                Visibility="Collapsed"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Bottom"
-                Margin="0,0,0,10">
+                    Grid.Row="1"
+                    Visibility="Collapsed"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,0,10">
 
                 <Grid HorizontalAlignment="Stretch">
                     <Grid.ColumnDefinitions>
-                        <!-- Left Column for the StackPanel -->
                         <ColumnDefinition Width="*" />
-                        <!-- Right Column for the GridView -->
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
+                    
                     <StackPanel Orientation="Horizontal" 
-                        HorizontalAlignment="Stretch">
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Center"
+                                Margin="0,0,20,0">
 
                         <!-- Left Side of the Panel-->
                         <Grid HorizontalAlignment="Stretch" Margin="0,0,20,0">
@@ -172,37 +173,35 @@
                     </StackPanel>
 
                     <!-- Right Side: GridView for the gallery -->
-                    <Grid x:Name="GalleryGrid"
-                          Grid.Column="1"
-                          Background="#1f1f1f"
-                          PointerEntered="GalleryGrid_PointerEntered"
-                          PointerExited="GalleryGrid_PointerExited">
+                    <Grid Grid.Column="1">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Previous button on the left -->
                         <Button x:Name="GridView_PreviousButton"
                                 Content="❮" 
-                                Width="50" 
-                                Height="50"
-                                VerticalAlignment="Center"
-                                HorizontalAlignment="Center"
+                                VerticalAlignment="Stretch"
+                                HorizontalAlignment="Left"
                                 Grid.Column="0"
-                                Visibility="Collapsed"
                                 Click="GridView_PreviousButton_Click"/>
-
+                        <!-- Next button on the right -->
+                        <Button x:Name="GridView_NextButton"
+                                Content="❯"
+                                VerticalAlignment="Stretch"
+                                HorizontalAlignment="Right"
+                                Grid.Column="2"
+                                Click="GridView_NextButton_Click"/>
                         <!-- GridView in the center -->
                         <GridView Name="ImageGridView"
                                   SelectionMode="Single"
                                   SelectionChanged="ImageGridView_SelectionChanged"
-                                  MinWidth="{Binding ActualWidth, ElementName=MainGrid}"
-                                  MaxWidth="{Binding ActualWidth, ElementName=MainGrid}"
                                   HorizontalAlignment="Stretch"
                                   Grid.Column="1"
-                                  VerticalAlignment="Center">
+                                  VerticalAlignment="Center"
+                                  Margin="5,0,0,-5">
                             <GridView.ItemTemplate>
                                 <DataTemplate>
                                     <Image Source="{Binding}" 
@@ -221,17 +220,6 @@
                                 </ItemsPanelTemplate>
                             </GridView.ItemsPanel>
                         </GridView>
-
-                        <!-- Next button on the right -->
-                        <Button x:Name="GridView_NextButton"
-                                Content="❯"
-                                Width="50"
-                                Height="50"
-                                VerticalAlignment="Center"
-                                HorizontalAlignment="Center"
-                                Grid.Column="2"
-                                Visibility="Collapsed"
-                                Click="GridView_NextButton_Click"/>
                     </Grid>
                 </Grid>
             </Border>

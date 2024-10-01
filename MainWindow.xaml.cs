@@ -159,6 +159,19 @@ namespace App1
                                file.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(file => new System.Text.RegularExpressions.Regex(@"\d+").Matches(Path.GetFileNameWithoutExtension(file))
+                    .Cast<System.Text.RegularExpressions.Match>()
+                    .Select(m =>
+                    {
+                        if (long.TryParse(m.Value, out long num))
+                        {
+                            return num;
+                        }
+                        return 0;
+                    })
+                    .DefaultIfEmpty(0)
+                    .First())
+                .ThenBy(file => file)
                 .ToList();
 
             LoadPage(0); // Load the first page of images
@@ -224,11 +237,16 @@ namespace App1
         {
             if (ImageGridView.SelectedItem != null)
             {
-                currentIndex = (currentPage * PageSize) + ImageGridView.SelectedIndex;  // Update the global index
-                DisplayImage(currentIndex);  // Update main image
+                // Calculate global index based on current page and the selected index within that page
+                currentIndex = (currentPage * PageSize) + ImageGridView.SelectedIndex;
+
+                // Display the selected image in the main viewer
+                DisplayImage(currentIndex);
+
+                // Update the image count to show the global index
                 ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
 
-                // Ensure the ScrollViewer follows the selected image
+                // Scroll the view to ensure the selected image is visible
                 ImageGridView.ScrollIntoView(ImageGridView.SelectedItem, ScrollIntoViewAlignment.Leading);
             }
         }
@@ -236,26 +254,25 @@ namespace App1
         private void GridView_NextButton_Click(object sender, RoutedEventArgs e)
         {
             // Navigate to the next set of images with circular navigation
-            currentIndex = (currentIndex + 10) % imageFiles.Count;
-            DisplayCurrentImages();
+            currentIndex = (currentIndex + PageSize) % imageFiles.Count;
+
+            // Update the current page based on the new index
+            currentPage = currentIndex / PageSize;
+
+            // Load the images for the new page
+            LoadPage(currentPage);
         }
 
         private void GridView_PreviousButton_Click(object sender, RoutedEventArgs e)
         {
             // Navigate to the previous set of images with circular navigation
-            currentIndex = (currentIndex - 10 + imageFiles.Count) % imageFiles.Count;
-            DisplayCurrentImages();
-        }
+            currentIndex = (currentIndex - PageSize + imageFiles.Count) % imageFiles.Count;
 
-        private void GalleryGrid_PointerEntered(object sender, PointerRoutedEventArgs e)
-        {
-            GridView_NextButton.Visibility = Visibility.Visible;
-            GridView_PreviousButton.Visibility = Visibility.Visible;
-        }
-        private void GalleryGrid_PointerExited(object sender, PointerRoutedEventArgs e)
-        {
-            GridView_NextButton.Visibility = Visibility.Collapsed;
-            GridView_PreviousButton.Visibility = Visibility.Collapsed;
+            // Update the current page based on the new index
+            currentPage = currentIndex / PageSize;
+
+            // Load the images for the new page
+            LoadPage(currentPage);
         }
 
         private void DisplayCurrentImages()
@@ -298,23 +315,11 @@ namespace App1
         private void UpdateSelection()
         {
             // Load the appropriate page and scroll to the selected image
-            int pageIndex = currentIndex / 10;
+            int pageIndex = currentIndex / PageSize;
             LoadPage(pageIndex);
 
             // Ensure the selected image is visible in the GridView and update the display
-            ImageGridView.SelectedIndex = currentIndex % 10;
-            ScrollIntoView(ImageGridView.SelectedItem);
-            UpdateCurrentIndexTextBlock();
-        }
-        private void ScrollIntoView(object selectedItem)
-        {
-            if (selectedItem != null)
-            {
-                ImageGridView.ScrollIntoView(selectedItem);
-            }
-        }
-        private void UpdateCurrentIndexTextBlock()
-        {
+            ImageGridView.SelectedIndex = currentIndex % PageSize;
             ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
         }
 
