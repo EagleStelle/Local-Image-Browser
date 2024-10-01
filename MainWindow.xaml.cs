@@ -32,6 +32,7 @@ namespace App1
         private string destinationFolder;  // Hold the destination folder path
         private MediaPlayer mediaPlayer;  // MediaPlayer for sound playback
         private FileSystemWatcher fileWatcher; // File watcher to monitor folder changes
+        private Dictionary<string, BitmapImage> imageCache = new Dictionary<string, BitmapImage>();  // Image cache
 
         public MainWindow()
         {
@@ -157,7 +158,6 @@ namespace App1
                                file.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".ico", StringComparison.OrdinalIgnoreCase) ||
                                file.EndsWith(".heic", StringComparison.OrdinalIgnoreCase))
-                // Natural sorting to handle numerical file names correctly
                 .OrderBy(file => new System.Text.RegularExpressions.Regex(@"\d+").Matches(Path.GetFileNameWithoutExtension(file))
                     .Cast<System.Text.RegularExpressions.Match>()
                     .Select(m =>
@@ -166,30 +166,31 @@ namespace App1
                         {
                             return num;
                         }
-                        return 0; // Default to 0 if parsing fails
+                        return 0;
                     })
                     .DefaultIfEmpty(0)
                     .First())
-                .ThenBy(file => file)  // For non-numeric parts
+                .ThenBy(file => file)
                 .ToList();
+
+            // Populate the GridView with images
+            ImageGridView.ItemsSource = imageFiles.Select(f => new BitmapImage(new Uri(f))).ToList();
 
             if (imageFiles.Count > 0)
             {
-                currentIndex = 0;  // Start with the first image
+                currentIndex = 0;
                 DisplayImage(currentIndex);
                 ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
 
-                // Set the watcher to monitor the selected folder
                 fileWatcher.Path = folderPath;
                 fileWatcher.EnableRaisingEvents = true;
             }
             else
             {
-                // No images found, reset to a blank state
-                SelectedImage.Source = null;  // Clear the displayed image
-                ImageFileName.Text = string.Empty;  // Clear the file name display
-                ImageCount.Text = string.Empty;  // Clear image count display
-                currentIndex = -1;  // Reset the index
+                SelectedImage.Source = null;
+                ImageFileName.Text = string.Empty;
+                ImageCount.Text = string.Empty;
+                currentIndex = -1;
             }
         }
         // This method is called when any file change occurs in the folder
@@ -218,6 +219,19 @@ namespace App1
                     }
                 }
             });
+        }
+
+        private void ImageGridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ImageGridView.SelectedItem != null)
+            {
+                if (ImageGridView.SelectedItem != null)
+                {
+                    string selectedImagePath = imageFiles[ImageGridView.SelectedIndex];
+                    SelectedImage.Source = new BitmapImage(new Uri(selectedImagePath));
+                    currentIndex = ImageGridView.SelectedIndex;  // Update the index
+                }
+            }
         }
 
         // Method to display an image at the given index
@@ -264,6 +278,7 @@ namespace App1
                 }
             }
         }
+
         private async Task DisplayImageAsync(int index)
         {
             if (index >= 0 && index < imageFiles.Count)

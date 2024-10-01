@@ -172,19 +172,36 @@
                     </StackPanel>
 
                     <!-- Right Side: GridView for the gallery -->
-                    <GridView Grid.Column="1"
-                              Name="ImageGridView"
-                              SelectionMode="Single"
-                              SelectionChanged="ImageGridView_SelectionChanged">
-                        <GridView.ItemTemplate>
-                            <DataTemplate>
-                                <Image Source="{Binding}" 
-                                       Width="100" 
-                                       Height="100" 
-                                       Stretch="UniformToFill" />
-                            </DataTemplate>
-                        </GridView.ItemTemplate>
-                    </GridView>
+                    <ScrollViewer Grid.Column="1"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Disabled"
+                                  HorizontalAlignment="Stretch">
+                        <GridView Name="ImageGridView"
+                                  SelectionMode="Single"
+                                  SelectionChanged="ImageGridView_SelectionChanged"
+                                  HorizontalAlignment="Stretch"
+                                  MinWidth="{Binding ActualWidth, ElementName=MainGrid}"
+                                  ScrollViewer.HorizontalScrollMode="Enabled"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                  ScrollViewer.VerticalScrollMode="Disabled">
+                            <GridView.ItemTemplate>
+                                <DataTemplate>
+                                    <Image Source="{Binding}" 
+                                           Width="100" 
+                                           Height="100" 
+                                           Stretch="UniformToFill"/>
+                                </DataTemplate>
+                            </GridView.ItemTemplate>
+
+                            <!-- Ensure GridView items are wrapped horizontally -->
+                            <GridView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </GridView.ItemsPanel>
+                        </GridView>
+                    </ScrollViewer>
                 </Grid>
             </Border>
 
