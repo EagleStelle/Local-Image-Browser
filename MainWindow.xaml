@@ -82,24 +82,31 @@
                 VerticalAlignment="Bottom"
                 Margin="0,0,0,10">
 
-                <StackPanel Orientation="Horizontal" 
+                <Grid HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <!-- Left Column for the StackPanel -->
+                        <ColumnDefinition Width="*" />
+                        <!-- Right Column for the GridView -->
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" 
                         HorizontalAlignment="Stretch">
 
-                    <!-- Left Side of the Panel-->
-                    <Grid HorizontalAlignment="Stretch" Margin="0,0,20,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                        <!-- Left Side of the Panel-->
+                        <Grid HorizontalAlignment="Stretch" Margin="0,0,20,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                        <!-- Source folder controls -->
-                        <Button Grid.Row="0"
+                            <!-- Source folder controls -->
+                            <Button Grid.Row="0"
                             Height="35" 
                             MinWidth="170"
                             VerticalAlignment="Center"
@@ -109,7 +116,7 @@
                             ToolTipService.ToolTip="Choose source folder"
                             Click="BrowseImageFolder_Click" 
                             Content="Browse Source"/>
-                        <TextBox Grid.Row="0" Grid.Column="1"
+                            <TextBox Grid.Row="0" Grid.Column="1"
                              Height="35"
                              MinWidth="250"
                              VerticalAlignment="Center"
@@ -121,8 +128,8 @@
                              IsReadOnly="True"
                              x:Name="SourceFolderPath"/>
 
-                        <!-- Switch button in the center -->
-                        <Button Grid.Row="1" Grid.ColumnSpan="2"
+                            <!-- Switch button in the center -->
+                            <Button Grid.Row="1" Grid.ColumnSpan="2"
                             Height="35" 
                             VerticalAlignment="Center"
                             HorizontalAlignment="Stretch"
@@ -133,8 +140,8 @@
                             Click="SwitchFolders_Click"
                             Content="⇅"/>
 
-                        <!-- Destination folder controls -->
-                        <Button Grid.Row="2"
+                            <!-- Destination folder controls -->
+                            <Button Grid.Row="2"
                             Height="35"
                             MinWidth="170"
                             VerticalAlignment="Center"
@@ -144,7 +151,7 @@
                             ToolTipService.ToolTip="Choose destination folder"
                             Click="BrowseDestinationFolder_Click"
                             Content="Browse Destination"/>
-                        <TextBox Grid.Row="2" Grid.Column="1"
+                            <TextBox Grid.Row="2" Grid.Column="1"
                              Height="35"
                              MinWidth="250"
                              VerticalAlignment="Center"
@@ -155,14 +162,30 @@
                              TextAlignment="Left"
                              IsReadOnly="True"
                              x:Name="DestinationFolderPath"/>
-                    </Grid>
+                        </Grid>
 
-                    <!-- Right Side of the Panel-->
-                    <ToggleSwitch x:Name="LoadTypeToggle" 
+                        <!-- Right Side of the Panel-->
+                        <ToggleSwitch x:Name="LoadTypeToggle" 
                               OffContent="Synchronous Mode" 
                               OnContent="Asynchronous Mode" 
                               IsOn="False"/>
-                </StackPanel>
+                    </StackPanel>
+
+                    <!-- Right Side: GridView for the gallery -->
+                    <GridView Grid.Column="1"
+                              Name="ImageGridView"
+                              SelectionMode="Single"
+                              SelectionChanged="ImageGridView_SelectionChanged">
+                        <GridView.ItemTemplate>
+                            <DataTemplate>
+                                <Image Source="{Binding}" 
+                                       Width="100" 
+                                       Height="100" 
+                                       Stretch="UniformToFill" />
+                            </DataTemplate>
+                        </GridView.ItemTemplate>
+                    </GridView>
+                </Grid>
             </Border>
 
             <Border x:Name="ConversionContainer" 
