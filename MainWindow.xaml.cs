@@ -224,6 +224,7 @@ namespace App1
         // Grid view gallery
         private const int PageSize = 10;
         private int currentPage = 0;
+
         // Method to load a specific page of images
         private void LoadPage(int pageIndex)
         {
@@ -232,7 +233,6 @@ namespace App1
             ImageGridView.ItemsSource = pageItems.Select(f => new BitmapImage(new Uri(f))).ToList();
         }
 
-        // Sync the ScrollViewer with the selected item and update the GridView
         private void ImageGridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ImageGridView.SelectedItem != null)
@@ -245,13 +245,52 @@ namespace App1
 
                 // Update the image count to show the global index
                 ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
-
-                // Scroll the view to ensure the selected image is visible
-                ImageGridView.ScrollIntoView(ImageGridView.SelectedItem, ScrollIntoViewAlignment.Leading);
             }
         }
+        // Adjust Next and Previous buttons to handle paging
+        private void NextImage_Click(object sender, RoutedEventArgs e)
+        {
+            ReleaseCurrentResources();
 
-        private void GridView_NextButton_Click(object sender, RoutedEventArgs e)
+            if (imageFiles.Count > 0)
+            {
+                // Increment index and loop around if at the end
+                currentIndex = (currentIndex + 1) % imageFiles.Count;
+
+                // Update the selection in the GridView and display the new image
+                UpdateSelection();  // This updates both the GridView selection and the displayed image
+            }
+        }
+        private void PreviousImage_Click(object sender, RoutedEventArgs e)
+        {
+            ReleaseCurrentResources();
+
+            if (imageFiles.Count > 0)
+            {
+                // Decrement index and loop around if at the beginning
+                currentIndex = (currentIndex - 1 + imageFiles.Count) % imageFiles.Count;
+
+                // Update the selection in the GridView and display the new image
+                UpdateSelection();  // This updates both the GridView selection and the displayed image
+            }
+        }
+        private void UpdateSelection()
+        {
+            // Load the appropriate page based on the current index
+            int pageIndex = currentIndex / PageSize;
+            LoadPage(pageIndex);
+
+            // Select the correct image in the GridView
+            ImageGridView.SelectedIndex = currentIndex % PageSize;
+
+            // Update the image count display
+            ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
+
+            // Ensure the new image is displayed in the main viewer
+            DisplayImage(currentIndex);
+        }
+
+        private void NextGrid_Click(object sender, RoutedEventArgs e)
         {
             // Navigate to the next set of images with circular navigation
             currentIndex = (currentIndex + PageSize) % imageFiles.Count;
@@ -261,9 +300,17 @@ namespace App1
 
             // Load the images for the new page
             LoadPage(currentPage);
+
+            // Jump to the first image in the GridView of the next page
+            ImageGridView.SelectedIndex = 0;
+            currentIndex = currentPage * PageSize;
+
+            // Update the display and image count
+            DisplayImage(currentIndex);
+            ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
         }
 
-        private void GridView_PreviousButton_Click(object sender, RoutedEventArgs e)
+        private void PreviousGrid_Click(object sender, RoutedEventArgs e)
         {
             // Navigate to the previous set of images with circular navigation
             currentIndex = (currentIndex - PageSize + imageFiles.Count) % imageFiles.Count;
@@ -273,53 +320,15 @@ namespace App1
 
             // Load the images for the new page
             LoadPage(currentPage);
-        }
 
-        private void DisplayCurrentImages()
-        {
-            var imagesToDisplay = imageFiles.Skip(currentIndex).Take(10).ToList();
-            ImageGridView.ItemsSource = imagesToDisplay;
-        }
+            // Jump to the last image in the GridView of the previous page
+            ImageGridView.SelectedIndex = (PageSize - 1) < imageFiles.Count % PageSize && currentPage == imageFiles.Count / PageSize
+                ? imageFiles.Count % PageSize - 1
+                : PageSize - 1;
+            currentIndex = (currentPage * PageSize) + ImageGridView.SelectedIndex;
 
-        // Adjust Next and Previous buttons to handle paging
-        private void NextImage_Click(object sender, RoutedEventArgs e)
-        {
-            if (currentIndex < imageFiles.Count - 1)
-            {
-                currentIndex++;
-            }
-            else
-            {
-                // If at the last image, go to the first
-                currentIndex = 0;
-            }
-
-            UpdateSelection();
-        }
-
-        private void PreviousImage_Click(object sender, RoutedEventArgs e)
-        {
-            if (currentIndex > 0)
-            {
-                currentIndex--;
-            }
-            else
-            {
-                // If at the first image, go to the last
-                currentIndex = imageFiles.Count - 1;
-            }
-
-            UpdateSelection();
-        }
-
-        private void UpdateSelection()
-        {
-            // Load the appropriate page and scroll to the selected image
-            int pageIndex = currentIndex / PageSize;
-            LoadPage(pageIndex);
-
-            // Ensure the selected image is visible in the GridView and update the display
-            ImageGridView.SelectedIndex = currentIndex % PageSize;
+            // Update the display and image count
+            DisplayImage(currentIndex);
             ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
         }
 
@@ -974,45 +983,53 @@ namespace App1
 
         private void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            // Check if Alt is pressed using InputKeyboardSource
+            // Check if Ctrl is pressed
             var isCtrlPressed = InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down);
 
-            // Arrow keys should work without Alt
+            // Handle the arrow keys
             if (e.Key == Windows.System.VirtualKey.Left)
             {
                 PreviousImage_Click(sender, e);  // Trigger Previous button when Left Arrow is pressed
+                e.Handled = true;  // Suppress default GridView behavior
             }
             else if (e.Key == Windows.System.VirtualKey.Right)
             {
                 NextImage_Click(sender, e);  // Trigger Next button when Right Arrow is pressed
+                e.Handled = true;  // Suppress default GridView behavior
             }
             else if (e.Key == Windows.System.VirtualKey.Down)
             {
                 MoveImage_Click(sender, e);  // Trigger Move button when Down Arrow is pressed
+                e.Handled = true;  // Suppress default GridView behavior
             }
             else if (e.Key == Windows.System.VirtualKey.Up)
             {
-                DeleteImage_Click(sender, e); // Trigger Delete button when Up Arrow is pressed
+                DeleteImage_Click(sender, e);  // Trigger Delete button when Up Arrow is pressed
+                e.Handled = true;  // Suppress default GridView behavior
             }
 
-            // A, S, D keys should only work with Alt
+            // Handle Ctrl + WASD keys
             else if (isCtrlPressed)
             {
                 if (e.Key == Windows.System.VirtualKey.A)
                 {
-                    PreviousImage_Click(sender, e);  // Trigger Previous button when Alt + A is pressed
+                    PreviousImage_Click(sender, e);  // Trigger Previous button when Ctrl + A is pressed
+                    e.Handled = true;
                 }
                 else if (e.Key == Windows.System.VirtualKey.D)
                 {
-                    NextImage_Click(sender, e);  // Trigger Next button when Alt + D is pressed
+                    NextImage_Click(sender, e);  // Trigger Next button when Ctrl + D is pressed
+                    e.Handled = true;
                 }
                 else if (e.Key == Windows.System.VirtualKey.S)
                 {
-                    MoveImage_Click(sender, e);  // Trigger Move button when Alt + S is pressed
+                    MoveImage_Click(sender, e);  // Trigger Move button when Ctrl + S is pressed
+                    e.Handled = true;
                 }
                 else if (e.Key == Windows.System.VirtualKey.W)
                 {
-                    DeleteImage_Click(sender, e);  // Trigger Delete button when Alt + S is pressed
+                    DeleteImage_Click(sender, e);  // Trigger Delete button when Ctrl + W is pressed
+                    e.Handled = true;
                 }
             }
         }

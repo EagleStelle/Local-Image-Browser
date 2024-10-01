@@ -46,7 +46,7 @@
             </Grid.RowDefinitions>
 
             <!-- Image display area -->
-            <Border Background="#2e2e2e" Grid.Row="0" Grid.ColumnSpan="3" Margin="10">
+            <Border x:Name="ImageBorder" Background="#2e2e2e" Grid.Row="0" Grid.ColumnSpan="3" Margin="10">
                 <Grid>
                     <!-- Image display -->
                     <Image x:Name="SelectedImage" 
@@ -181,19 +181,17 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Previous button on the left -->
-                        <Button x:Name="GridView_PreviousButton"
-                                Content="❮" 
+                        <Button Content="❮" 
                                 VerticalAlignment="Stretch"
                                 HorizontalAlignment="Left"
                                 Grid.Column="0"
-                                Click="GridView_PreviousButton_Click"/>
+                                Click="PreviousGrid_Click"/>
                         <!-- Next button on the right -->
-                        <Button x:Name="GridView_NextButton"
-                                Content="❯"
+                        <Button Content="❯"
                                 VerticalAlignment="Stretch"
                                 HorizontalAlignment="Right"
                                 Grid.Column="2"
-                                Click="GridView_NextButton_Click"/>
+                                Click="NextGrid_Click"/>
                         <!-- GridView in the center -->
                         <GridView Name="ImageGridView"
                                   SelectionMode="Single"
