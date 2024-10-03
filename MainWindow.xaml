@@ -138,8 +138,10 @@
                                     Foreground="White"
                                     Margin="0,5,0,5"
                                     ToolTipService.ToolTip="Swap folders"
+                                    IsEnabled="False"
                                     Click="SwitchFolders_Click"
-                                    Content="⇅"/>
+                                    Content="⇅"
+                                    x:Name="SwitchFolders"/>
 
                             <!-- Destination folder controls -->
                             <Button Grid.Row="2"
@@ -181,17 +183,22 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Previous button on the left -->
-                        <Button Content="❮" 
+                        <Button x:Name="PreviousGrid"
+                                Content="❮" 
                                 VerticalAlignment="Stretch"
                                 HorizontalAlignment="Left"
+                                MinWidth="30"
                                 Grid.Column="0"
-                                Click="PreviousGrid_Click"/>
-                        <!-- Next button on the right -->
-                        <Button Content="❯"
+                                Click="PreviousGrid_Click"
+                                Visibility="Collapsed"/>
+                        <Button x:Name="NextGrid"
+                                Content="❯"
                                 VerticalAlignment="Stretch"
-                                HorizontalAlignment="Right"
+                                HorizontalAlignment="Stretch"
+                                MinWidth="30"
                                 Grid.Column="2"
-                                Click="NextGrid_Click"/>
+                                Click="NextGrid_Click"
+                                Visibility="Collapsed"/>
                         <!-- GridView in the center -->
                         <GridView Name="ImageGridView"
                                   SelectionMode="Single"
