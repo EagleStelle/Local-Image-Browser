@@ -21,9 +21,6 @@ using Windows.System;
 using Microsoft.UI.Xaml.Controls;
 using ImageMagick;
 using System.Diagnostics;
-using WinRT.Interop;
-using static System.Net.Mime.MediaTypeNames;
-using Windows.Devices.Input;
 
 namespace App1
 {
@@ -184,6 +181,10 @@ namespace App1
 
                 fileWatcher.Path = folderPath;
                 fileWatcher.EnableRaisingEvents = true;
+
+                // Unhide Previous and Next buttons
+                PreviousGrid.Visibility = Visibility.Visible;
+                NextGrid.Visibility = Visibility.Visible;
             }
             else
             {
@@ -321,16 +322,18 @@ namespace App1
             // Load the images for the new page
             LoadPage(currentPage);
 
+            // Determine the number of items on the current page
+            var itemsOnCurrentPage = imageFiles.Skip(currentPage * PageSize).Take(PageSize).Count();
+
             // Jump to the last image in the GridView of the previous page
-            ImageGridView.SelectedIndex = (PageSize - 1) < imageFiles.Count % PageSize && currentPage == imageFiles.Count / PageSize
-                ? imageFiles.Count % PageSize - 1
-                : PageSize - 1;
+            ImageGridView.SelectedIndex = itemsOnCurrentPage - 1; // Select the last item on the page
             currentIndex = (currentPage * PageSize) + ImageGridView.SelectedIndex;
 
             // Update the display and image count
             DisplayImage(currentIndex);
             ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
         }
+
 
 
         // Method to display an image at the given index
@@ -427,33 +430,13 @@ namespace App1
             if (folder != null)
             {
                 SourceFolderPath.Text = folder.Path;  // Update the Image Folder Path textbox
-                LoadImagesFromFolder(folder.Path);  // Load all images from the selected folder
+                LoadImagesFromFolder(folder.Path);    // Load all images from the selected folder
+
+                // Enable the SwitchFolders button if both source and destination are filled
+                UpdateSwitchFoldersButtonState();
             }
         }
-        private void SwitchFolders_Click(object sender, RoutedEventArgs e)
-        {
-            // Swap the paths of the source and destination folders
-            string temp = SourceFolderPath.Text;
-            SourceFolderPath.Text = DestinationFolderPath.Text;
-            DestinationFolderPath.Text = temp;
 
-            // Update the destination folder variable
-            destinationFolder = DestinationFolderPath.Text;
-
-            // Update the FileSystemWatcher to monitor the new source folder
-            if (!string.IsNullOrEmpty(SourceFolderPath.Text))
-            {
-                // Disable the watcher to avoid conflicts during switching
-                fileWatcher.EnableRaisingEvents = false;
-
-                // Set the new folder to watch
-                fileWatcher.Path = SourceFolderPath.Text;
-                fileWatcher.EnableRaisingEvents = true; // Re-enable the watcher
-
-                // Reload the images from the new source folder
-                LoadImagesFromFolder(SourceFolderPath.Text);
-            }
-        }
         private async void BrowseDestinationFolder_Click(object sender, RoutedEventArgs e)
         {
             FolderPicker folderPicker = new FolderPicker();
@@ -468,6 +451,54 @@ namespace App1
             {
                 DestinationFolderPath.Text = folder.Path;
                 destinationFolder = folder.Path;  // Set the destination folder
+
+                // Enable the SwitchFolders button if both source and destination are filled
+                UpdateSwitchFoldersButtonState();
+            }
+        }
+
+        // Function to update the state of the SwitchFolders button
+        private void UpdateSwitchFoldersButtonState()
+        {
+            // Enable the SwitchFolders button if both source and destination folders are selected
+            SwitchFolders.IsEnabled = !string.IsNullOrEmpty(SourceFolderPath.Text) && !string.IsNullOrEmpty(DestinationFolderPath.Text);
+        }
+        private void SwitchFolders_Click(object sender, RoutedEventArgs e)
+        {
+            // Swap the paths of the source and destination folders
+            string temp = SourceFolderPath.Text;
+            SourceFolderPath.Text = DestinationFolderPath.Text;
+            DestinationFolderPath.Text = temp;
+
+            // Update the destination folder variable
+            destinationFolder = DestinationFolderPath.Text;
+
+            // Check if the new source folder (previous destination folder) is empty
+            if (!string.IsNullOrEmpty(SourceFolderPath.Text) && Directory.Exists(SourceFolderPath.Text))
+            {
+                var files = Directory.GetFiles(SourceFolderPath.Text);
+                if (files.Length == 0)
+                {
+                    // If the folder is empty, clear the imageFiles list and other UI elements
+                    imageFiles.Clear();
+                    SelectedImage.Source = null;
+                    ImageFileName.Text = string.Empty;
+                    ImageCount.Text = string.Empty;
+                    currentIndex = -1;
+
+                    // Disable the file watcher since there is no folder to watch
+                    fileWatcher.EnableRaisingEvents = false;
+                }
+                else
+                {
+                    // Update the FileSystemWatcher to monitor the new source folder if it's not empty
+                    fileWatcher.EnableRaisingEvents = false;  // Disable the watcher to avoid conflicts during switching
+                    fileWatcher.Path = SourceFolderPath.Text;
+                    fileWatcher.EnableRaisingEvents = true;  // Re-enable the watcher
+
+                    // Reload the images from the new source folder
+                    LoadImagesFromFolder(SourceFolderPath.Text);
+                }
             }
         }
         // Methods for Conversion
