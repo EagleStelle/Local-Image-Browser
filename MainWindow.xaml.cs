@@ -337,110 +337,118 @@ namespace App1
         }
 
         // Method to display an image at the given index
+        private CompositeTransform imageTransform = new CompositeTransform();
+
+        private void InitializeTransform()
+        {
+            imageTransform = new CompositeTransform();
+            SelectedImage.RenderTransform = imageTransform;
+            SelectedImage.RenderTransformOrigin = new Point(0.5, 0.5); // Center the zoom
+        }
+
+        // Method to display an image at the given index (unchanged logic)
         private void DisplayImage(int currentIndex)
         {
             ReleaseCurrentResources(); // Release resources before loading a new image
 
             if (LoadTypeToggle.IsOn)
             {
-                // Async method
                 _ = DisplayImageAsync(currentIndex);
             }
             else
             {
-                // Sync method
                 DisplayImageSync(currentIndex);
             }
+
+            InitializeTransform(); // Initialize transform after loading the image
         }
+
+        // Sync method (unchanged logic)
         private void DisplayImageSync(int index)
         {
             if (index >= 0 && index < imageFiles.Count)
             {
                 string selectedImagePath = imageFiles[index];
-
-                // Display the file name on top
                 ImageFileName.Text = Path.GetFileName(selectedImagePath);
 
-                // Load the image into a MemoryStream to avoid file lock
                 using (FileStream fs = new FileStream(selectedImagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     BitmapImage bitmap = new BitmapImage();
                     bitmap.SetSource(fs.AsRandomAccessStream());
 
-                    SelectedImage.Source = bitmap;  // Display the selected image
+                    SelectedImage.Source = bitmap;
                 }
 
-                // Update image count display without modifying currentIndex
                 ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
             }
         }
+
+        // Async method (unchanged logic)
         private async Task DisplayImageAsync(int index)
         {
             if (index >= 0 && index < imageFiles.Count)
             {
                 string selectedImagePath = imageFiles[index];
-
-                // Display the file name on top
                 ImageFileName.Text = Path.GetFileName(selectedImagePath);
 
-                // Load the new image in the background
                 BitmapImage bitmap = new BitmapImage();
-
-                // Handle image loading completion to avoid flicker
                 bitmap.ImageOpened += (s, e) =>
                 {
-                    // Once the image is fully loaded, update the source
                     SelectedImage.Source = bitmap;
                 };
 
-                // Load the image asynchronously from the file
                 using (FileStream fs = new FileStream(selectedImagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     await bitmap.SetSourceAsync(fs.AsRandomAccessStream());
                 }
 
-                // Update image count display
                 ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
             }
         }
+
+        // Zoom functionality using the Slider
         private void ZoomSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            // Get the zoom scale value from the slider
             double zoomFactor = e.NewValue;
 
-            // Ensure the image doesn't zoom out below the boundary
-            if (IsImageTouchingSides() && zoomFactor < 1)
+            // Apply zoom to the CompositeTransform
+            imageTransform.ScaleX = zoomFactor;
+            imageTransform.ScaleY = zoomFactor;
+        }
+
+        // Drag functionality
+        private Point lastPanPosition;
+        private bool isDragging = false;
+
+        private void SelectedImage_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            isDragging = true;
+            lastPanPosition = e.GetCurrentPoint(ImageBorder).Position;
+            SelectedImage.CapturePointer(e.Pointer); // Capture the pointer for drag
+        }
+
+        private void SelectedImage_PointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            if (isDragging)
             {
-                ZoomSlider.Value = 1; // Reset to minimum zoom level if image touches sides
-                return;
+                var currentPosition = e.GetCurrentPoint(ImageBorder).Position;
+                var deltaX = currentPosition.X - lastPanPosition.X;
+                var deltaY = currentPosition.Y - lastPanPosition.Y;
+
+                // Update translation based on movement
+                imageTransform.TranslateX += deltaX;
+                imageTransform.TranslateY += deltaY;
+
+                lastPanPosition = currentPosition;
             }
-
-            // Center-based zoom logic
-            ZoomImage(zoomFactor);
         }
 
-        private bool IsImageTouchingSides()
+        private void SelectedImage_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
-            // Check if the image is touching the sides of the ImageBorder
-            var imageBounds = SelectedImage.TransformToVisual(ImageBorder)
-                .TransformBounds(new Rect(0, 0, SelectedImage.ActualWidth, SelectedImage.ActualHeight));
-
-            return imageBounds.Left <= 0 || imageBounds.Right >= ImageBorder.ActualWidth ||
-                   imageBounds.Top <= 0 || imageBounds.Bottom >= ImageBorder.ActualHeight;
+            isDragging = false;
+            SelectedImage.ReleasePointerCapture(e.Pointer); // Release the pointer capture
         }
 
-        private void ZoomImage(double zoomFactor)
-        {
-            // Set RenderTransform to apply the zoom, center-based
-            SelectedImage.RenderTransformOrigin = new Point(0.5, 0.5); // Center the zoom
-            var scaleTransform = new ScaleTransform
-            {
-                ScaleX = zoomFactor,
-                ScaleY = zoomFactor
-            };
-
-            SelectedImage.RenderTransform = scaleTransform;
-        }
 
 
         // Methods for Directory

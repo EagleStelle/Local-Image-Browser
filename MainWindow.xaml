@@ -49,13 +49,10 @@
             <Border x:Name="ImageBorder" Background="#2e2e2e" Grid.Row="0" Grid.ColumnSpan="3" Margin="10">
                 <Grid>
                     <!-- Image display -->
-                    <Image x:Name="SelectedImage" 
-                           Stretch="Uniform">
-                        <Image.RenderTransform>
-                            <CompositeTransform x:Name="ImageTransform" />
-                        </Image.RenderTransform>
-                    </Image>
-
+                    <Image x:Name="SelectedImage"
+                           PointerPressed="SelectedImage_PointerPressed"
+                           PointerMoved="SelectedImage_PointerMoved"
+                           PointerReleased="SelectedImage_PointerReleased" />
 
                     <!-- Previous Button on the left side -->
                     <Button x:Name="PreviousButton"
@@ -431,7 +428,7 @@
 
                         <!-- Zoom slider beside the image count -->
                         <Slider x:Name="ZoomSlider" 
-                                Minimum="0.1" 
+                                Minimum="1" 
                                 Maximum="5" 
                                 Value="1" 
                                 ValueChanged="ZoomSlider_ValueChanged" 
