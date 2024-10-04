@@ -21,6 +21,9 @@ using Windows.System;
 using Microsoft.UI.Xaml.Controls;
 using ImageMagick;
 using System.Diagnostics;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 
 namespace App1
 {
@@ -310,7 +313,6 @@ namespace App1
             DisplayImage(currentIndex);
             ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
         }
-
         private void PreviousGrid_Click(object sender, RoutedEventArgs e)
         {
             // Navigate to the previous set of images with circular navigation
@@ -333,8 +335,6 @@ namespace App1
             DisplayImage(currentIndex);
             ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
         }
-
-
 
         // Method to display an image at the given index
         private void DisplayImage(int currentIndex)
@@ -403,6 +403,45 @@ namespace App1
                 ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
             }
         }
+        private void ZoomSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            // Get the zoom scale value from the slider
+            double zoomFactor = e.NewValue;
+
+            // Ensure the image doesn't zoom out below the boundary
+            if (IsImageTouchingSides() && zoomFactor < 1)
+            {
+                ZoomSlider.Value = 1; // Reset to minimum zoom level if image touches sides
+                return;
+            }
+
+            // Center-based zoom logic
+            ZoomImage(zoomFactor);
+        }
+
+        private bool IsImageTouchingSides()
+        {
+            // Check if the image is touching the sides of the ImageBorder
+            var imageBounds = SelectedImage.TransformToVisual(ImageBorder)
+                .TransformBounds(new Rect(0, 0, SelectedImage.ActualWidth, SelectedImage.ActualHeight));
+
+            return imageBounds.Left <= 0 || imageBounds.Right >= ImageBorder.ActualWidth ||
+                   imageBounds.Top <= 0 || imageBounds.Bottom >= ImageBorder.ActualHeight;
+        }
+
+        private void ZoomImage(double zoomFactor)
+        {
+            // Set RenderTransform to apply the zoom, center-based
+            SelectedImage.RenderTransformOrigin = new Point(0.5, 0.5); // Center the zoom
+            var scaleTransform = new ScaleTransform
+            {
+                ScaleX = zoomFactor,
+                ScaleY = zoomFactor
+            };
+
+            SelectedImage.RenderTransform = scaleTransform;
+        }
+
 
         // Methods for Directory
         private void HamburgerButton_Click(object sender, RoutedEventArgs e)
@@ -436,7 +475,6 @@ namespace App1
                 UpdateSwitchFoldersButtonState();
             }
         }
-
         private async void BrowseDestinationFolder_Click(object sender, RoutedEventArgs e)
         {
             FolderPicker folderPicker = new FolderPicker();

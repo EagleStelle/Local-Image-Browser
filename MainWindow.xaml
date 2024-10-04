@@ -50,7 +50,12 @@
                 <Grid>
                     <!-- Image display -->
                     <Image x:Name="SelectedImage" 
-                           Stretch="Uniform"/>
+                           Stretch="Uniform">
+                        <Image.RenderTransform>
+                            <CompositeTransform x:Name="ImageTransform" />
+                        </Image.RenderTransform>
+                    </Image>
+
 
                     <!-- Previous Button on the left side -->
                     <Button x:Name="PreviousButton"
@@ -409,19 +414,32 @@
                          KeyDown="RenameTextBox_KeyDown" 
                          LostFocus="RenameTextBox_LostFocus" />
 
-                    <TextBlock x:Name="ImageCount" 
-                           HorizontalAlignment="Right" 
-                           VerticalAlignment="Center" 
-                           Foreground="White" 
-                           Margin="0,0,5,0" 
-                           Grid.Column="2"
-                           DoubleTapped="ImageCount_DoubleTapped" />
-                    <TextBox x:Name="JumpToTextBox" 
-                         HorizontalAlignment="Right" 
-                         TextAlignment="Center"
-                         Visibility="Collapsed" 
-                         KeyDown="JumpToTextBox_KeyDown" 
-                         LostFocus="JumpToTextBox_LostFocus" />
+                    <!-- Image count and zoom slider on the right side -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <!-- Image count -->
+                        <TextBlock x:Name="ImageCount" 
+                                   VerticalAlignment="Center" 
+                                   Foreground="White" 
+                                   Margin="0,0,5,0" 
+                                   DoubleTapped="ImageCount_DoubleTapped" />
+                        <TextBox x:Name="JumpToTextBox" 
+                                 HorizontalAlignment="Right" 
+                                 TextAlignment="Center"
+                                 Visibility="Collapsed" 
+                                 KeyDown="JumpToTextBox_KeyDown" 
+                                 LostFocus="JumpToTextBox_LostFocus" />
+
+                        <!-- Zoom slider beside the image count -->
+                        <Slider x:Name="ZoomSlider" 
+                                Minimum="0.1" 
+                                Maximum="5" 
+                                Value="1" 
+                                ValueChanged="ZoomSlider_ValueChanged" 
+                                HorizontalAlignment="Right" 
+                                VerticalAlignment="Center"
+                                Width="200"
+                                Margin="10,0,0,0" />
+                    </StackPanel>
                 </Grid>
             </Border>
         </Grid>
