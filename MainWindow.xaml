@@ -49,10 +49,17 @@
             <Border x:Name="ImageBorder" Background="#2e2e2e" Grid.Row="0" Grid.ColumnSpan="3" Margin="10">
                 <Grid>
                     <!-- Image display -->
-                    <Image x:Name="SelectedImage"
-                           PointerPressed="SelectedImage_PointerPressed"
-                           PointerMoved="SelectedImage_PointerMoved"
-                           PointerReleased="SelectedImage_PointerReleased" />
+                    <ScrollViewer x:Name="scrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" 
+                                  PointerWheelChanged="ScrollViewer_PointerWheelChanged">
+                        <Image x:Name="SelectedImage" Stretch="Uniform" RenderTransformOrigin="0.5,0.5" 
+                               ManipulationMode="TranslateX,TranslateY" ManipulationDelta="ScrollViewer_ManipulationDelta"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" MaxHeight="{Binding ElementName=scrollViewer, Path=ViewportHeight}" MaxWidth="{Binding ElementName=scrollViewer, Path=ViewportWidth}">
+                            <Image.RenderTransform>
+                                <CompositeTransform x:Name="compositeTransform" ScaleX="1" ScaleY="1" />
+                            </Image.RenderTransform>
+                        </Image>
+                    </ScrollViewer>
+
 
                     <!-- Previous Button on the left side -->
                     <Button x:Name="PreviousButton"
