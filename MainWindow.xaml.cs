@@ -23,7 +23,6 @@ using ImageMagick;
 using System.Diagnostics;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
-using Windows.Foundation;
 
 namespace App1
 {
@@ -35,6 +34,10 @@ namespace App1
         private MediaPlayer mediaPlayer;  // MediaPlayer for sound playback
         private FileSystemWatcher fileWatcher; // File watcher to monitor folder changes
         private Dictionary<string, BitmapImage> imageCache = new Dictionary<string, BitmapImage>();  // Image cache
+
+        // To position image in zoom function
+        private double _translateX = 0;
+        private double _translateY = 0;
 
         public MainWindow()
         {
@@ -339,12 +342,6 @@ namespace App1
         // Method to display an image at the given index
         private CompositeTransform imageTransform = new CompositeTransform();
 
-        private void InitializeTransform()
-        {
-            imageTransform = new CompositeTransform();
-            SelectedImage.RenderTransform = imageTransform;
-            SelectedImage.RenderTransformOrigin = new Point(0.5, 0.5); // Center the zoom
-        }
 
         // Method to display an image at the given index (unchanged logic)
         private void DisplayImage(int currentIndex)
@@ -359,8 +356,6 @@ namespace App1
             {
                 DisplayImageSync(currentIndex);
             }
-
-            InitializeTransform(); // Initialize transform after loading the image
         }
 
         // Sync method (unchanged logic)
@@ -406,50 +401,91 @@ namespace App1
             }
         }
 
-        // Zoom functionality using the Slider
+        // Zoom using slider
         private void ZoomSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            double zoomFactor = e.NewValue;
-
-            // Apply zoom to the CompositeTransform
-            imageTransform.ScaleX = zoomFactor;
-            imageTransform.ScaleY = zoomFactor;
-        }
-
-        // Drag functionality
-        private Point lastPanPosition;
-        private bool isDragging = false;
-
-        private void SelectedImage_PointerPressed(object sender, PointerRoutedEventArgs e)
-        {
-            isDragging = true;
-            lastPanPosition = e.GetCurrentPoint(ImageBorder).Position;
-            SelectedImage.CapturePointer(e.Pointer); // Capture the pointer for drag
-        }
-
-        private void SelectedImage_PointerMoved(object sender, PointerRoutedEventArgs e)
-        {
-            if (isDragging)
+            if (compositeTransform != null)
             {
-                var currentPosition = e.GetCurrentPoint(ImageBorder).Position;
-                var deltaX = currentPosition.X - lastPanPosition.X;
-                var deltaY = currentPosition.Y - lastPanPosition.Y;
+                compositeTransform.ScaleX = e.NewValue;
+                compositeTransform.ScaleY = e.NewValue;
 
-                // Update translation based on movement
-                imageTransform.TranslateX += deltaX;
-                imageTransform.TranslateY += deltaY;
-
-                lastPanPosition = currentPosition;
+                if (e.NewValue == 1)
+                {
+                    // Reset translations when zoom is 1
+                    _translateX = 0;
+                    _translateY = 0;
+                    compositeTransform.TranslateX = 0;
+                    compositeTransform.TranslateY = 0;
+                }
+                else
+                {
+                    // Ensure image remains within boundaries after zoom change
+                    ApplyBoundaryConstraints();
+                }
             }
         }
-
-        private void SelectedImage_PointerReleased(object sender, PointerRoutedEventArgs e)
+        // Zoom using mouse scroll wheel
+        private void ScrollViewer_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
-            isDragging = false;
-            SelectedImage.ReleasePointerCapture(e.Pointer); // Release the pointer capture
+            var delta = e.GetCurrentPoint(scrollViewer).Properties.MouseWheelDelta;
+            if (delta > 0 && ZoomSlider.Value < ZoomSlider.Maximum)
+            {
+                ZoomSlider.Value += 0.1;
+            }
+            else if (delta < 0 && ZoomSlider.Value > ZoomSlider.Minimum)
+            {
+                ZoomSlider.Value -= 0.1;
+            }
         }
+        // Drag the image when zoomed in (without sliding and limited to boundaries)
+        private void ScrollViewer_ManipulationDelta(object sender, ManipulationDeltaRoutedEventArgs e)
+        {
+            if (compositeTransform.ScaleX > 1 || compositeTransform.ScaleY > 1)
+            {
+                _translateX += e.Delta.Translation.X;
+                _translateY += e.Delta.Translation.Y;
 
+                // Apply boundary constraints after dragging
+                ApplyBoundaryConstraints();
+            }
+        }
+        // Ensure the image can't be dragged outside its boundaries
+        private void ApplyBoundaryConstraints()
+        {
+            var imageWidth = SelectedImage.ActualWidth * compositeTransform.ScaleX;
+            var imageHeight = SelectedImage.ActualHeight * compositeTransform.ScaleY;
 
+            var viewportWidth = scrollViewer.ViewportWidth;
+            var viewportHeight = scrollViewer.ViewportHeight;
+
+            // Horizontal constraints
+            if (imageWidth > viewportWidth)
+            {
+                var maxX = (imageWidth - viewportWidth) / 2;
+                if (_translateX > maxX) _translateX = maxX;
+                if (_translateX < -maxX) _translateX = -maxX;
+            }
+            else
+            {
+                _translateX = 0;  // Center the image if it's smaller than the viewport
+            }
+
+            // Vertical constraints
+            if (imageHeight > viewportHeight)
+            {
+                var maxY = (imageHeight - viewportHeight) / 2;
+                if (_translateY > maxY) _translateY = maxY;
+                if (_translateY < -maxY) _translateY = -maxY;
+            }
+            else
+            {
+                _translateY = 0;  // Center the image if it's smaller than the viewport
+            }
+
+            // Apply constrained translations
+            compositeTransform.TranslateX = _translateX;
+            compositeTransform.TranslateY = _translateY;
+        }
 
         // Methods for Directory
         private void HamburgerButton_Click(object sender, RoutedEventArgs e)
