@@ -406,12 +406,19 @@ namespace App1
         {
             if (compositeTransform != null)
             {
+                // Scale the image based on the slider value
                 compositeTransform.ScaleX = e.NewValue;
                 compositeTransform.ScaleY = e.NewValue;
 
+                // Update the zoom percentage text, if the TextBlock exists
+                if (ZoomPercentageText != null)
+                {
+                    ZoomPercentageText.Text = $"{(e.NewValue * 100).ToString("F0")}%";
+                }
+
                 if (e.NewValue == 1)
                 {
-                    // Reset translations when zoom is 1
+                    // Reset translations when zoom is 1 (100%)
                     _translateX = 0;
                     _translateY = 0;
                     compositeTransform.TranslateX = 0;
