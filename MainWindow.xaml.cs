@@ -822,6 +822,61 @@ namespace App1
                 }
             }
         }
+        // Method for Copy
+        private async void CopyImage_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentIndex >= 0 && currentIndex < imageFiles.Count)
+            {
+                if (!string.IsNullOrEmpty(destinationFolder))
+                {
+                    string sourceFile = imageFiles[currentIndex];
+                    string sourceDirectory = Path.GetDirectoryName(sourceFile);
+                    string fileName = Path.GetFileNameWithoutExtension(sourceFile);
+                    string fileExtension = Path.GetExtension(sourceFile);
+                    string destinationPath = Path.Combine(destinationFolder, Path.GetFileName(sourceFile));
+
+                    try
+                    {
+                        // Check if the source and destination folders are the same
+                        if (!sourceDirectory.Equals(destinationFolder, StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Check for file name conflict and add suffix if necessary
+                            int copyCount = 1;
+                            while (File.Exists(destinationPath))
+                            {
+                                copyCount++;
+                                destinationPath = Path.Combine(destinationFolder, $"{fileName} ({copyCount}){fileExtension}");
+                            }
+
+                            // Copy the file to the destination
+                            File.Copy(sourceFile, destinationPath);
+
+                            PlaySound("ms-appx:///Assets/Sounds/copy.wav");
+
+                            // Keep the image displayed in the UI (no resource release)
+                        }
+                        else
+                        {
+                            DisplayImage(currentIndex);  // Display the current image if it's not copied
+                        }
+
+                        // Force garbage collection after copying
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                        GC.Collect();
+                    }
+                    catch (IOException ex)
+                    {
+                        var dialog = new MessageDialog($"Error copying the image: {ex.Message}");
+                        await dialog.ShowAsync();
+                    }
+                }
+                else
+                {
+                    PlaySound("ms-appx:///Assets/Sounds/error.wav");
+                }
+            }
+        }
         // Method for Delete
         private async void DeleteImage_Click(object sender, RoutedEventArgs e)
         {

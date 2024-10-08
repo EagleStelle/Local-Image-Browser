@@ -378,7 +378,7 @@
                             ToolTipService.ToolTip="Show conversion panel" />
 
                         <!-- Move Button -->
-                        <Button Content="📋"
+                        <Button Content="📄"
                             Width="40" 
                             Height="30" 
                             FontSize="12"
@@ -389,7 +389,18 @@
                             Background="#333333" 
                             Foreground="White"
                             ToolTipService.ToolTip="Move this image" />
-
+                        <!-- Copy Button -->
+                        <Button Content="📋"
+                            Width="40" 
+                            Height="30" 
+                            FontSize="12"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center" 
+                            Margin="5,0,0,0" 
+                            Click="CopyImage_Click"
+                            Background="#333333" 
+                            Foreground="White"
+                            ToolTipService.ToolTip="Copy this image" />
                         <!-- Delete Button -->
                         <Button Content="🗑"
                             Width="40" 
