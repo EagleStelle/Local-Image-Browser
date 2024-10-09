@@ -372,6 +372,9 @@ namespace App1
                     bitmap.SetSource(fs.AsRandomAccessStream());
 
                     SelectedImage.Source = bitmap;
+
+                    // Display the image resolution
+                    ImageResolution.Text = $"({bitmap.PixelWidth} x {bitmap.PixelHeight})";
                 }
 
                 ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
@@ -390,6 +393,9 @@ namespace App1
                 bitmap.ImageOpened += (s, e) =>
                 {
                     SelectedImage.Source = bitmap;
+
+                    // Display the image resolution
+                    ImageResolution.Text = $"({bitmap.PixelWidth} x {bitmap.PixelHeight})";
                 };
 
                 using (FileStream fs = new FileStream(selectedImagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
