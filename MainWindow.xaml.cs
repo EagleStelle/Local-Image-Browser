@@ -381,29 +381,52 @@ namespace App1
             }
         }
 
-        // Async method
+        // Async method (Added exception handling)
         private async Task DisplayImageAsync(int index)
         {
             if (index >= 0 && index < imageFiles.Count)
             {
-                string selectedImagePath = imageFiles[index];
-                ImageFileName.Text = Path.GetFileName(selectedImagePath);
-
-                BitmapImage bitmap = new BitmapImage();
-                bitmap.ImageOpened += (s, e) =>
+                try
                 {
-                    SelectedImage.Source = bitmap;
+                    string selectedImagePath = imageFiles[index];
+                    ImageFileName.Text = Path.GetFileName(selectedImagePath);
 
-                    // Display the image resolution
-                    ImageResolution.Text = $"({bitmap.PixelWidth} x {bitmap.PixelHeight})";
-                };
+                    BitmapImage bitmap = new BitmapImage();
 
-                using (FileStream fs = new FileStream(selectedImagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    await bitmap.SetSourceAsync(fs.AsRandomAccessStream());
+                    bitmap.ImageOpened += (s, e) =>
+                    {
+                        // Ensure this code runs on the UI thread
+                        DispatcherQueue.TryEnqueue(() =>
+                        {
+                            SelectedImage.Source = bitmap;
+                            // Display the image resolution
+                            ImageResolution.Text = $"({bitmap.PixelWidth} x {bitmap.PixelHeight})";
+                        });
+                    };
+
+                    // Open file stream for reading the image
+                    using (FileStream fs = new FileStream(selectedImagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        // Set the image source using a random access stream
+                        await bitmap.SetSourceAsync(fs.AsRandomAccessStream());
+                    }
+
+                    // Update image count label on the UI thread
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
+                    });
                 }
-
-                ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
+                catch (Exception ex)
+                {
+                    // Handle exceptions (e.g., file access issues)
+                    DispatcherQueue.TryEnqueue(() =>
+                    {
+                        ImageResolution.Text = $"Error loading image: {ex.Message}";
+                        ImageFileName.Text = "N/A";
+                        ImageCount.Text = "N/A";
+                    });
+                }
             }
         }
 
