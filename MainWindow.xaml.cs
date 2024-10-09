@@ -460,10 +460,13 @@ namespace App1
                 }
             }
         }
-        // Zoom using mouse scroll wheel
+
+        // Zoom using mouse scroll wheel, zoom to cursor position
         private void ScrollViewer_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
             var delta = e.GetCurrentPoint(scrollViewer).Properties.MouseWheelDelta;
+            var pointerPosition = e.GetCurrentPoint(SelectedImage).Position;
+
             if (delta > 0 && ZoomSlider.Value < ZoomSlider.Maximum)
             {
                 ZoomSlider.Value += 0.1;
@@ -471,6 +474,20 @@ namespace App1
             else if (delta < 0 && ZoomSlider.Value > ZoomSlider.Minimum)
             {
                 ZoomSlider.Value -= 0.1;
+            }
+
+            // Adjust translations to zoom towards the cursor position
+            if (compositeTransform != null)
+            {
+                double zoomFactor = ZoomSlider.Value;
+                double prevZoomFactor = zoomFactor - (delta > 0 ? 0.1 : -0.1);
+
+                // Calculate the offset to zoom towards the pointer
+                _translateX -= (pointerPosition.X - scrollViewer.ViewportWidth / 2) * (zoomFactor - prevZoomFactor);
+                _translateY -= (pointerPosition.Y - scrollViewer.ViewportHeight / 2) * (zoomFactor - prevZoomFactor);
+
+                // Apply boundary constraints after zoom
+                ApplyBoundaryConstraints();
             }
         }
         // Drag the image when zoomed in (without sliding and limited to boundaries)
