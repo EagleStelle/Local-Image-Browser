@@ -358,7 +358,7 @@ namespace App1
             }
         }
 
-        // Sync method (unchanged logic)
+        // Sync method
         private void DisplayImageSync(int index)
         {
             if (index >= 0 && index < imageFiles.Count)
@@ -381,7 +381,7 @@ namespace App1
             }
         }
 
-        // Async method (unchanged logic)
+        // Async method
         private async Task DisplayImageAsync(int index)
         {
             if (index >= 0 && index < imageFiles.Count)
@@ -390,10 +390,6 @@ namespace App1
                 ImageFileName.Text = Path.GetFileName(selectedImagePath);
 
                 BitmapImage bitmap = new BitmapImage();
-
-                // Apply downscaling to reduce memory usage
-                bitmap.DecodePixelWidth = 1280;
-
                 bitmap.ImageOpened += (s, e) =>
                 {
                     SelectedImage.Source = bitmap;
@@ -1173,8 +1169,8 @@ namespace App1
 
             if (e.Key == Windows.System.VirtualKey.F5)
             {
-                ReloadUI();
-                e.Handled = true;
+                ReloadUI(); // Trigger Reload F5 is pressed
+                e.Handled = true; // Suppress default GridView behavior
                 return;
             }
             // Handle the arrow keys
@@ -1236,12 +1232,12 @@ namespace App1
         // Misc Controls
         private void ReloadUI()
         {
-            // Reload the current page or reset the controls
-            Frame rootFrame = Window.Current.Content as Frame;
-
-            if (rootFrame != null)
+            Frame rootFrame = this.Content as Frame;
+            if (rootFrame != null && rootFrame.Content != null)
             {
-                rootFrame.Navigate(rootFrame.Content.GetType()); // Reload the current page
+                // Re-navigate to the current page to simulate a reload
+                var currentPageType = rootFrame.Content.GetType();
+                rootFrame.Navigate(currentPageType);
             }
         }
         private void PlaySound(string soundFilePath)
