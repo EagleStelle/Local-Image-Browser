@@ -415,19 +415,30 @@
                             ToolTipService.ToolTip="Delete this image" />
                     </StackPanel>
 
-                    <TextBlock x:Name="ImageFileName" 
-                           HorizontalAlignment="Center" 
-                           FontSize="18" 
-                           Foreground="White"
-                           TextAlignment="Center"
-                           DoubleTapped="ImageFileName_DoubleTapped" 
-                           ToolTipService.ToolTip="Double click to rename" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,0">
+                        <!-- Grid to layer ImageFileName and RenameTextBox in the same position -->
+                        <Grid>
+                            <TextBlock x:Name="ImageFileName" 
+                                       HorizontalAlignment="Center" 
+                                       FontSize="18" 
+                                       Foreground="White"
+                                       TextAlignment="Center"
+                                       DoubleTapped="ImageFileName_DoubleTapped" 
+                                       ToolTipService.ToolTip="Double click to rename" />
 
-                    <TextBox x:Name="RenameTextBox" 
-                         HorizontalAlignment="Center" 
-                         Visibility="Collapsed" 
-                         KeyDown="RenameTextBox_KeyDown" 
-                         LostFocus="RenameTextBox_LostFocus" />
+                            <TextBox x:Name="RenameTextBox" 
+                                     HorizontalAlignment="Center" 
+                                     Visibility="Collapsed" 
+                                     KeyDown="RenameTextBox_KeyDown" 
+                                     LostFocus="RenameTextBox_LostFocus" />
+                        </Grid>
+
+                        <!-- ImageResolution TextBlock beside ImageFileName -->
+                        <TextBlock x:Name="ImageResolution" 
+                                   HorizontalAlignment="Center" 
+                                   Margin="10,0,0,0"
+                                   FontSize="18" />
+                    </StackPanel>
 
                     <!-- Image count and zoom slider on the right side -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
