@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.UI.Windowing;
-using Microsoft.UI;
+using Windows.Foundation;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -430,42 +429,16 @@ namespace App1
             }
         }
 
-        // Zoom using slider
-        private void ZoomSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
-        {
-            if (compositeTransform != null)
-            {
-                // Scale the image based on the slider value
-                compositeTransform.ScaleX = e.NewValue;
-                compositeTransform.ScaleY = e.NewValue;
-
-                // Update the zoom percentage text, if the TextBlock exists
-                if (ZoomPercentageText != null)
-                {
-                    ZoomPercentageText.Text = $"{(e.NewValue * 100).ToString("F0")}%";
-                }
-
-                if (e.NewValue == 1)
-                {
-                    // Reset translations when zoom is 1 (100%)
-                    _translateX = 0;
-                    _translateY = 0;
-                    compositeTransform.TranslateX = 0;
-                    compositeTransform.TranslateY = 0;
-                }
-                else
-                {
-                    // Ensure image remains within boundaries after zoom change
-                    ApplyBoundaryConstraints();
-                }
-            }
-        }
+        private Point _zoomCenter; // This will store the current zoom focal point
 
         // Zoom using mouse scroll wheel, zoom to cursor position
         private void ScrollViewer_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
             var delta = e.GetCurrentPoint(scrollViewer).Properties.MouseWheelDelta;
             var pointerPosition = e.GetCurrentPoint(SelectedImage).Position;
+
+            // Store the cursor position as the zoom focal point
+            _zoomCenter = new Point(pointerPosition.X, pointerPosition.Y);
 
             if (delta > 0 && ZoomSlider.Value < ZoomSlider.Maximum)
             {
@@ -480,14 +453,57 @@ namespace App1
             if (compositeTransform != null)
             {
                 double zoomFactor = ZoomSlider.Value;
-                double prevZoomFactor = zoomFactor - (delta > 0 ? 0.1 : -0.1);
+                ApplyZoom(zoomFactor, _zoomCenter);
+            }
+        }
 
-                // Calculate the offset to zoom towards the pointer
-                _translateX -= (pointerPosition.X - scrollViewer.ViewportWidth / 2) * (zoomFactor - prevZoomFactor);
-                _translateY -= (pointerPosition.Y - scrollViewer.ViewportHeight / 2) * (zoomFactor - prevZoomFactor);
+        // Apply zoom relative to the focal point (shared for both mouse and slider zoom)
+        private void ApplyZoom(double zoomFactor, Point zoomCenter)
+        {
+            var relativeX = zoomCenter.X - scrollViewer.ViewportWidth / 2;
+            var relativeY = zoomCenter.Y - scrollViewer.ViewportHeight / 2;
 
-                // Apply boundary constraints after zoom
-                ApplyBoundaryConstraints();
+            _translateX -= relativeX * (zoomFactor - compositeTransform.ScaleX);
+            _translateY -= relativeY * (zoomFactor - compositeTransform.ScaleY);
+
+            // Apply scaling and translations
+            compositeTransform.ScaleX = zoomFactor;
+            compositeTransform.ScaleY = zoomFactor;
+            compositeTransform.TranslateX = _translateX;
+            compositeTransform.TranslateY = _translateY;
+
+            ApplyBoundaryConstraints();
+        }
+
+        // Handle slider value change
+        private void ZoomSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            if (compositeTransform != null)
+            {
+                double newZoomFactor = e.NewValue;
+
+                // Use the last focal point (whether set by mouse or default center)
+                if (_zoomCenter == default(Point))
+                {
+                    _zoomCenter = new Point(scrollViewer.ViewportWidth / 2, scrollViewer.ViewportHeight / 2); // default to center
+                }
+
+                ApplyZoom(newZoomFactor, _zoomCenter);
+
+                // Update the zoom percentage text, if the TextBlock exists
+                if (ZoomPercentageText != null)
+                {
+                    ZoomPercentageText.Text = $"{(newZoomFactor * 100).ToString("F0")}%";
+                }
+
+                if (newZoomFactor == 1)
+                {
+                    // Reset translations when zoom is 1 (100%)
+                    _translateX = 0;
+                    _translateY = 0;
+                    compositeTransform.TranslateX = 0;
+                    compositeTransform.TranslateY = 0;
+                }
             }
         }
         // Drag the image when zoomed in (without sliding and limited to boundaries)
