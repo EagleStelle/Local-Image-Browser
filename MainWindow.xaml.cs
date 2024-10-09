@@ -390,6 +390,10 @@ namespace App1
                 ImageFileName.Text = Path.GetFileName(selectedImagePath);
 
                 BitmapImage bitmap = new BitmapImage();
+
+                // Apply downscaling to reduce memory usage
+                bitmap.DecodePixelWidth = 1280;
+
                 bitmap.ImageOpened += (s, e) =>
                 {
                     SelectedImage.Source = bitmap;
@@ -1167,26 +1171,36 @@ namespace App1
             // Check if Ctrl is pressed
             var isCtrlPressed = InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down);
 
+            if (e.Key == Windows.System.VirtualKey.F5)
+            {
+                ReloadUI();
+                e.Handled = true;
+                return;
+            }
             // Handle the arrow keys
             if (e.Key == Windows.System.VirtualKey.Left)
             {
                 PreviousImage_Click(sender, e);  // Trigger Previous button when Left Arrow is pressed
                 e.Handled = true;  // Suppress default GridView behavior
+                return;
             }
             else if (e.Key == Windows.System.VirtualKey.Right)
             {
                 NextImage_Click(sender, e);  // Trigger Next button when Right Arrow is pressed
                 e.Handled = true;  // Suppress default GridView behavior
+                return;
             }
             else if (e.Key == Windows.System.VirtualKey.Down)
             {
                 MoveImage_Click(sender, e);  // Trigger Move button when Down Arrow is pressed
                 e.Handled = true;  // Suppress default GridView behavior
+                return;
             }
             else if (e.Key == Windows.System.VirtualKey.Up)
             {
                 DeleteImage_Click(sender, e);  // Trigger Delete button when Up Arrow is pressed
                 e.Handled = true;  // Suppress default GridView behavior
+                return;
             }
 
             // Handle Ctrl + WASD keys
@@ -1196,37 +1210,39 @@ namespace App1
                 {
                     PreviousImage_Click(sender, e);  // Trigger Previous button when Ctrl + A is pressed
                     e.Handled = true;
+                    return;
                 }
                 else if (e.Key == Windows.System.VirtualKey.D)
                 {
                     NextImage_Click(sender, e);  // Trigger Next button when Ctrl + D is pressed
                     e.Handled = true;
+                    return;
                 }
                 else if (e.Key == Windows.System.VirtualKey.S)
                 {
                     MoveImage_Click(sender, e);  // Trigger Move button when Ctrl + S is pressed
                     e.Handled = true;
+                    return;
                 }
                 else if (e.Key == Windows.System.VirtualKey.W)
                 {
                     DeleteImage_Click(sender, e);  // Trigger Delete button when Ctrl + W is pressed
                     e.Handled = true;
+                    return;
                 }
             }
         }
 
         // Misc Controls
-        private void CenterWindow()
+        private void ReloadUI()
         {
-            var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            var windowId = Win32Interop.GetWindowIdFromWindow(hWnd);
-            var appWindow = AppWindow.GetFromWindowId(windowId);
+            // Reload the current page or reset the controls
+            Frame rootFrame = Window.Current.Content as Frame;
 
-            var displayArea = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary);
-            var centerX = (displayArea.WorkArea.Width - appWindow.Size.Width) / 2;
-            var centerY = (displayArea.WorkArea.Height - appWindow.Size.Height) / 2;
-
-            appWindow.Move(new PointInt32(centerX, centerY));
+            if (rootFrame != null)
+            {
+                rootFrame.Navigate(rootFrame.Content.GetType()); // Reload the current page
+            }
         }
         private void PlaySound(string soundFilePath)
         {
