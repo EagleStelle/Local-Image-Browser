@@ -6,7 +6,6 @@ using Windows.Foundation;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
-using Windows.Graphics;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.Storage.Pickers;
@@ -27,51 +26,85 @@ namespace App1
 {
     public sealed partial class MainWindow : Window
     {
-        private List<string> imageFiles;  // To hold the list of image files from the selected folder
-        private int currentIndex;  // Track the current image index
-        private string destinationFolder;  // Hold the destination folder path
-        private MediaPlayer mediaPlayer;  // MediaPlayer for sound playback
-        private FileSystemWatcher fileWatcher; // File watcher to monitor folder changes
-        private Dictionary<string, BitmapImage> imageCache = new Dictionary<string, BitmapImage>();  // Image cache
+        // Hotkeys dictionary: Maps key combinations to actions
+        private readonly Dictionary<(VirtualKey, bool), Action<object, KeyRoutedEventArgs>> keyMappings;
 
-        // To position image in zoom function
-        private double _translateX = 0;
-        private double _translateY = 0;
+        // Image-related variables
+        private List<string> imageFiles;   // Holds the list of image files from the selected folder
+        private int currentIndex;          // Tracks the current image index
+        private Dictionary<string, BitmapImage> imageCache = new Dictionary<string, BitmapImage>();  // Caches images for faster access
+
+        // File and folder management
+        private string destinationFolder;  // Stores the destination folder path
+        private FileSystemWatcher fileWatcher; // Monitors the folder for any changes
+
+        // Media playback
+        private MediaPlayer mediaPlayer;   // Used for sound playback
+
+        // Image zoom functionality
+        private double _translateX = 0;    // Horizontal translation for zoomed image
+        private double _translateY = 0;    // Vertical translation for zoomed image
 
         public MainWindow()
         {
             InitializeComponent();
+
+            // Set up the title bar
             SetTitleBar(AppTitleBar);
             ExtendsContentIntoTitleBar = true;
 
-            // Initialize FileSystemWatcher with default values
-            fileWatcher = new FileSystemWatcher();
-            fileWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
-            fileWatcher.Filter = "*.*";
+            // Initialize hotkey mappings (Key, isCtrlPressed) => Action
+            keyMappings = new Dictionary<(VirtualKey, bool), Action<object, KeyRoutedEventArgs>>
+            {
+                { (VirtualKey.X, true), (sender, e) => MoveImage_Click(sender, e) },                                                // Ctrl + X to move
+                { (VirtualKey.Up, false), (sender, e) => MoveImage_Click(sender, e) },                                              // Up arrow to move
+                { (VirtualKey.C, true), (sender, e) => CopyImage_Click(sender, e) },                                                // Ctrl + C to copy
+                { (VirtualKey.Down, false), (sender, e) => CopyImage_Click(sender, e) },                                            // Down arrow to copy
+                { (VirtualKey.Left, false), (sender, e) => PreviousImage_Click(sender, e) },                                        // Left arrow for previous image
+                { (VirtualKey.Right, false), (sender, e) => NextImage_Click(sender, e) },                                           // Right arrow for next image
+                { (VirtualKey.Left, true), (sender, e) => PreviousGrid_Click(sender, e) },                                          // Ctrl + Left arrow for previous gallery
+                { (VirtualKey.Right, true), (sender, e) => NextGrid_Click(sender, e) },                                             // Ctrl + Right arrow for next gallery
+                { (VirtualKey.Delete, false), (sender, e) => DeleteImage_Click(sender, e) },                                        // Delete key
+                { (VirtualKey.I, true), (sender, e) => DirectoryButton_Click(sender, e)},                                           // Show Directory Panel
+                { (VirtualKey.G, true), (sender, e) => GalleryButton_Click(sender, e)},                                           // Show Gallery Panel
+                { (VirtualKey.R, true), (sender, e) => ConversionButton_Click(sender, e)},                                          // Show Conversion Panel
+                { (VirtualKey.F2, false), (sender, e) => ImageFileName_DoubleTapped(sender, new DoubleTappedRoutedEventArgs()) },   // F2 to rename
+                { (VirtualKey.F3, false), (sender, e) => ImageCount_DoubleTapped(sender, new DoubleTappedRoutedEventArgs()) },      // F3 to jump
+                { (VirtualKey.F5, false), (sender, e) => ReloadUI() },                                                              // F5 to reload UI
+            };
+
+            // Initialize FileSystemWatcher to monitor folder changes
+            fileWatcher = new FileSystemWatcher
+            {
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,  // Watch for file name and modification changes
+                Filter = "*.*"  // Monitor all files
+            };
+            // Assign event handlers for folder changes
             fileWatcher.Changed += OnFolderChanged;
             fileWatcher.Created += OnFolderChanged;
             fileWatcher.Deleted += OnFolderChanged;
             fileWatcher.Renamed += OnFolderChanged;
 
-            // Initialize Drop and Drag Events
+            // Enable drag-and-drop functionality on the grid
             MainGrid.AllowDrop = true;
             MainGrid.Drop += OnDrop;
             MainGrid.DragOver += OnDragOver;
 
-            // Initialize hover events for Next and Previous buttons
+            // Set up hover effects for Next and Previous buttons
             NextButton.Opacity = 0;
             PreviousButton.Opacity = 0;
-
-            NextButton.PointerEntered += (s, e) => NextButton.Opacity = 1;
-            NextButton.PointerExited += (s, e) => NextButton.Opacity = 0;
-
+            NextButton.PointerEntered += (s, e) => NextButton.Opacity = 1;  // Show on hover
+            NextButton.PointerExited += (s, e) => NextButton.Opacity = 0;   // Hide on exit
             PreviousButton.PointerEntered += (s, e) => PreviousButton.Opacity = 1;
             PreviousButton.PointerExited += (s, e) => PreviousButton.Opacity = 0;
 
-            imageFiles = new List<string>();  // Initialize the image list
-            currentIndex = -1;  // Initialize index to no selection
+            // Initialize image management variables
+            imageFiles = new List<string>();  // Holds the list of image files
+            currentIndex = -1;  // Set the index to indicate no image selected
             destinationFolder = string.Empty;  // No folder selected initially
-            mediaPlayer = new MediaPlayer();  // Initialize the MediaPlayer for sound
+
+            // Initialize MediaPlayer for sound effects
+            mediaPlayer = new MediaPlayer();
         }
 
         // Drag and Drop Function
@@ -186,10 +219,6 @@ namespace App1
 
                 fileWatcher.Path = folderPath;
                 fileWatcher.EnableRaisingEvents = true;
-
-                // Unhide Previous and Next buttons
-                PreviousGrid.Visibility = Visibility.Visible;
-                NextGrid.Visibility = Visibility.Visible;
             }
             else
             {
@@ -295,6 +324,42 @@ namespace App1
             // Ensure the new image is displayed in the main viewer
             DisplayImage(currentIndex);
         }
+
+        // Method to toggle visibility of the containers based on the selected one
+        private void ToggleContainerVisibility(FrameworkElement selectedContainer)
+        {
+            // Collapse all containers except the selected one
+            if (selectedContainer.Visibility == Visibility.Collapsed)
+            {
+                DirectoryContainer.Visibility = Visibility.Collapsed;
+                GalleryContainer.Visibility = Visibility.Collapsed;
+                ConversionContainer.Visibility = Visibility.Collapsed;
+
+                // Show the selected container
+                selectedContainer.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                // Collapse the selected container if it is already visible
+                selectedContainer.Visibility = Visibility.Collapsed;
+            }
+        }
+        // Event handler for the Directory button
+        private void DirectoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            ToggleContainerVisibility(DirectoryContainer);
+        }
+        // Event handler for the Gallery button
+        private void GalleryButton_Click(object sender, RoutedEventArgs e)
+        {
+            ToggleContainerVisibility(GalleryContainer);
+        }
+        // Event handler for the Conversion button
+        private void ConversionButton_Click(object sender, RoutedEventArgs e)
+        {
+            ToggleContainerVisibility(ConversionContainer);
+        }
+
 
         private void NextGrid_Click(object sender, RoutedEventArgs e)
         {
@@ -430,7 +495,6 @@ namespace App1
         }
 
         private Point _zoomCenter; // This will store the current zoom focal point
-
         // Zoom using mouse scroll wheel, zoom to cursor position
         private void ScrollViewer_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
@@ -557,18 +621,6 @@ namespace App1
         }
 
         // Methods for Directory
-        private void HamburgerButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (ControlsContainer.Visibility == Visibility.Collapsed)
-            {
-                ControlsContainer.Visibility = Visibility.Visible;
-                ConversionContainer.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                ControlsContainer.Visibility = Visibility.Collapsed;
-            }
-        }
         private async void BrowseImageFolder_Click(object sender, RoutedEventArgs e)
         {
             FolderPicker folderPicker = new FolderPicker();
@@ -653,18 +705,7 @@ namespace App1
             }
         }
         // Methods for Conversion
-        private void ConversionButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (ConversionContainer.Visibility == Visibility.Collapsed)
-            {
-                ConversionContainer.Visibility = Visibility.Visible;
-                ControlsContainer.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                ConversionContainer.Visibility = Visibility.Collapsed;
-            }
-        }
+
         private async void ConvertImage_Click(object sender, RoutedEventArgs e)
         {
             if (currentIndex < 0 || currentIndex >= imageFiles.Count)
@@ -860,8 +901,6 @@ namespace App1
                             DisplayImage(currentIndex);  // Display the current image if it's not moved
                         }
 
-                        PlaySound("ms-appx:///Assets/Sounds/move.wav");
-
                         // Force garbage collection after moving
                         GC.Collect();
                         GC.WaitForPendingFinalizers();
@@ -880,7 +919,7 @@ namespace App1
                 }
                 else
                 {
-                    PlaySound("ms-appx:///Assets/Sounds/error.wav");
+
                 }
             }
         }
@@ -913,8 +952,6 @@ namespace App1
                             // Copy the file to the destination
                             File.Copy(sourceFile, destinationPath);
 
-                            PlaySound("ms-appx:///Assets/Sounds/copy.wav");
-
                             // Keep the image displayed in the UI (no resource release)
                         }
                         else
@@ -935,7 +972,7 @@ namespace App1
                 }
                 else
                 {
-                    PlaySound("ms-appx:///Assets/Sounds/error.wav");
+                    // Failed
                 }
             }
         }
@@ -996,9 +1033,6 @@ namespace App1
                             ImageCount.Text = string.Empty;
                             currentIndex = -1;
                         }
-
-                        // Play the delete sound
-                        PlaySound("ms-appx:///Assets/Sounds/delete.wav");
 
                         // Force garbage collection after deleting
                         GC.Collect();
@@ -1096,7 +1130,7 @@ namespace App1
                     }
                     else
                     {
-                        PlaySound("ms-appx:///Assets/Sounds/error.wav");
+                        // Failed
                     }
                 }
 
@@ -1218,73 +1252,19 @@ namespace App1
             GC.WaitForPendingFinalizers();
         }
 
+        // Hotkey Controls
         private void Grid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             // Check if Ctrl is pressed
             var isCtrlPressed = InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down);
 
-            if (e.Key == Windows.System.VirtualKey.F5)
+            // Try to find the action in the dictionary
+            if (keyMappings.TryGetValue((e.Key, isCtrlPressed), out var action))
             {
-                ReloadUI(); // Trigger Reload F5 is pressed
-                e.Handled = true; // Suppress default GridView behavior
-                return;
-            }
-            // Handle the arrow keys
-            if (e.Key == Windows.System.VirtualKey.Left)
-            {
-                PreviousImage_Click(sender, e);  // Trigger Previous button when Left Arrow is pressed
-                e.Handled = true;  // Suppress default GridView behavior
-                return;
-            }
-            else if (e.Key == Windows.System.VirtualKey.Right)
-            {
-                NextImage_Click(sender, e);  // Trigger Next button when Right Arrow is pressed
-                e.Handled = true;  // Suppress default GridView behavior
-                return;
-            }
-            else if (e.Key == Windows.System.VirtualKey.Down)
-            {
-                MoveImage_Click(sender, e);  // Trigger Move button when Down Arrow is pressed
-                e.Handled = true;  // Suppress default GridView behavior
-                return;
-            }
-            else if (e.Key == Windows.System.VirtualKey.Up)
-            {
-                DeleteImage_Click(sender, e);  // Trigger Delete button when Up Arrow is pressed
-                e.Handled = true;  // Suppress default GridView behavior
-                return;
-            }
-
-            // Handle Ctrl + WASD keys
-            else if (isCtrlPressed)
-            {
-                if (e.Key == Windows.System.VirtualKey.A)
-                {
-                    PreviousImage_Click(sender, e);  // Trigger Previous button when Ctrl + A is pressed
-                    e.Handled = true;
-                    return;
-                }
-                else if (e.Key == Windows.System.VirtualKey.D)
-                {
-                    NextImage_Click(sender, e);  // Trigger Next button when Ctrl + D is pressed
-                    e.Handled = true;
-                    return;
-                }
-                else if (e.Key == Windows.System.VirtualKey.S)
-                {
-                    MoveImage_Click(sender, e);  // Trigger Move button when Ctrl + S is pressed
-                    e.Handled = true;
-                    return;
-                }
-                else if (e.Key == Windows.System.VirtualKey.W)
-                {
-                    DeleteImage_Click(sender, e);  // Trigger Delete button when Ctrl + W is pressed
-                    e.Handled = true;
-                    return;
-                }
+                action.Invoke(sender, e);  // Invoke the corresponding action
+                e.Handled = true;          // Mark the event as handled
             }
         }
-
         // Misc Controls
         private void ReloadUI()
         {
@@ -1294,18 +1274,6 @@ namespace App1
                 // Re-navigate to the current page to simulate a reload
                 var currentPageType = rootFrame.Content.GetType();
                 rootFrame.Navigate(currentPageType);
-            }
-        }
-        private void PlaySound(string soundFilePath)
-        {
-            try
-            {
-                mediaPlayer.Source = MediaSource.CreateFromUri(new Uri(soundFilePath));
-                mediaPlayer.Play();
-            }
-            catch (Exception ex)
-            {
-                var dialog = new MessageDialog($"Error playing sound: {ex.Message}");
             }
         }
         private async Task ShowMessage(string message)
