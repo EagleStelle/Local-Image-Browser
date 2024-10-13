@@ -39,6 +39,7 @@ namespace App1
         private double _translateX = 0;    // Horizontal translation for zoomed image
         private double _translateY = 0;    // Vertical translation for zoomed image
 
+        private bool isPreviewMode = true; // Start in preview mode
         public MainWindow()
         {
             InitializeComponent();
@@ -312,7 +313,6 @@ namespace App1
         {
             ToggleContainerVisibility(DirectoryContainer);
         }
-        private bool isPreviewMode = true; // Start in preview mode
 
         private void GalleryButton_Click(object sender, RoutedEventArgs e)
         {
@@ -330,6 +330,34 @@ namespace App1
             }
 
             isPreviewMode = !isPreviewMode; // Toggle the mode
+        }
+        private void GalleryImage_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            // Get the clicked image
+            var clickedImage = sender as Image;
+            if (clickedImage?.Source is BitmapImage bitmapImage)
+            {
+                // Hide the gallery and show the selected image
+                GalleryBorder.Visibility = Visibility.Collapsed;
+                ImageBorder.Visibility = Visibility.Visible;
+
+                // Get the index of the clicked image in the imageFiles list and update currentIndex
+                currentIndex = imageFiles.IndexOf(bitmapImage.UriSource?.LocalPath);
+                if (currentIndex != -1)
+                {
+                    // Update the ImageCount based on the currentIndex
+                    ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
+                }
+
+                // Set the source of SelectedImage to the clicked image
+                SelectedImage.Source = bitmapImage;
+
+                // Set isPreviewMode to true (indicating preview mode)
+                isPreviewMode = true;
+
+                // Update UI elements
+                ImageFileName.Text = Path.GetFileName(bitmapImage.UriSource?.LocalPath ?? "Unknown");
+            }
         }
 
         // Event handler for the Conversion button

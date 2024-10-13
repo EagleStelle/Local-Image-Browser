@@ -87,15 +87,16 @@
             <Border x:Name="GalleryBorder" Background="#2e2e2e" Margin="10" Visibility="Collapsed">
                 <GridView x:Name="ImageGridView" 
                           Grid.Row="1"
-                          HorizontalAlignment="Center"
+                          HorizontalAlignment="Stretch"
                           VerticalAlignment="Top"
                           Width="Auto"
                           Margin="10"
                           SelectionMode="Single">
                     <GridView.ItemTemplate>
                         <DataTemplate>
-                            <Grid Width="150" Height="150" Margin="5">
-                                <Image Source="{Binding}" Stretch="UniformToFill" />
+                            <Grid Width="100" Height="100" Margin="5">
+                                <Image Source="{Binding}" 
+                                       DoubleTapped="GalleryImage_DoubleTapped" />
                             </Grid>
                         </DataTemplate>
                     </GridView.ItemTemplate>
