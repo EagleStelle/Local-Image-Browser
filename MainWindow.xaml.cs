@@ -6,7 +6,6 @@ using Windows.Foundation;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
-using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.Storage.Pickers;
 using Windows.UI.Popups;
@@ -44,6 +43,10 @@ namespace App1
         // Image zoom functionality
         private double _translateX = 0;    // Horizontal translation for zoomed image
         private double _translateY = 0;    // Vertical translation for zoomed image
+
+        // Grid view gallery
+        private const int PageSize = 10;
+        private int currentPage = 0;
 
         public MainWindow()
         {
@@ -102,9 +105,6 @@ namespace App1
             imageFiles = new List<string>();  // Holds the list of image files
             currentIndex = -1;  // Set the index to indicate no image selected
             destinationFolder = string.Empty;  // No folder selected initially
-
-            // Initialize MediaPlayer for sound effects
-            mediaPlayer = new MediaPlayer();
         }
 
         // List of accepted image file extensions
@@ -238,7 +238,6 @@ namespace App1
                 currentIndex = -1;
             }
         }
-
         // This method is called when any file change occurs in the folder
         private void OnFolderChanged(object sender, FileSystemEventArgs e)
         {
@@ -267,10 +266,6 @@ namespace App1
             });
         }
 
-        // Grid view gallery
-        private const int PageSize = 10;
-        private int currentPage = 0;
-
         // Method to load a specific page of images
         private void LoadPage(int pageIndex)
         {
@@ -278,7 +273,6 @@ namespace App1
             var pageItems = imageFiles.Skip(pageIndex * PageSize).Take(PageSize).ToList();
             ImageGridView.ItemsSource = pageItems.Select(f => new BitmapImage(new Uri(f))).ToList();
         }
-
         private void ImageGridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ImageGridView.SelectedItem != null)
@@ -432,7 +426,6 @@ namespace App1
                 DisplayImageSync(currentIndex);
             }
         }
-
         // Sync method
         private void DisplayImageSync(int index)
         {
@@ -455,7 +448,6 @@ namespace App1
                 ImageCount.Text = $"{index + 1} / {imageFiles.Count}";
             }
         }
-
         // Async method (Added exception handling)
         private async Task DisplayImageAsync(int index)
         {
@@ -531,13 +523,18 @@ namespace App1
                 ApplyZoom(zoomFactor, _zoomCenter);
             }
         }
-
         // Apply zoom relative to the focal point (shared for both mouse and slider zoom)
         private void ApplyZoom(double zoomFactor, Point zoomCenter)
         {
-            var relativeX = zoomCenter.X - scrollViewer.ViewportWidth / 2;
-            var relativeY = zoomCenter.Y - scrollViewer.ViewportHeight / 2;
+            // Get the scroll offsets to account for where the user has scrolled
+            var horizontalOffset = scrollViewer.HorizontalOffset;
+            var verticalOffset = scrollViewer.VerticalOffset;
 
+            // Calculate the relative position of the zoom center within the scrollable content
+            var relativeX = zoomCenter.X + horizontalOffset - (scrollViewer.ViewportWidth / 2);
+            var relativeY = zoomCenter.Y + verticalOffset - (scrollViewer.ViewportHeight / 2);
+
+            // Update translations for zoom towards the cursor position
             _translateX -= relativeX * (zoomFactor - compositeTransform.ScaleX);
             _translateY -= relativeY * (zoomFactor - compositeTransform.ScaleY);
 
@@ -547,9 +544,22 @@ namespace App1
             compositeTransform.TranslateX = _translateX;
             compositeTransform.TranslateY = _translateY;
 
+            // Adjust the scroll viewer offsets to maintain the focal point during zoom
+            double newHorizontalOffset = (zoomCenter.X * zoomFactor) - (scrollViewer.ViewportWidth / 2);
+            double newVerticalOffset = (zoomCenter.Y * zoomFactor) - (scrollViewer.ViewportHeight / 2);
+
+            // Ensure offsets remain within bounds
+            if (newHorizontalOffset >= 0 && newHorizontalOffset <= scrollViewer.ExtentWidth - scrollViewer.ViewportWidth)
+            {
+                scrollViewer.ChangeView(newHorizontalOffset, null, null);
+            }
+            if (newVerticalOffset >= 0 && newVerticalOffset <= scrollViewer.ExtentHeight - scrollViewer.ViewportHeight)
+            {
+                scrollViewer.ChangeView(null, newVerticalOffset, null);
+            }
+
             ApplyBoundaryConstraints();
         }
-
         // Handle slider value change
         private void ZoomSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
