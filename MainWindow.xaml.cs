@@ -107,7 +107,12 @@ namespace App1
             mediaPlayer = new MediaPlayer();
         }
 
-        // Drag and Drop Function
+        // List of accepted image file extensions
+        private readonly List<string> acceptedImageExtensions = new List<string>
+        {
+            ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".tif", ".ico", ".heic", ".svg"
+        };
+        // Handles the drop operation for both source and destination areas
         private async void OnDrop(object sender, Microsoft.UI.Xaml.DragEventArgs e)
         {
             if (e.DataView.Contains(StandardDataFormats.StorageItems))
@@ -119,81 +124,82 @@ namespace App1
                     var gridWidth = MainGrid.ActualWidth;
                     var storageItem = items[0];
 
+                    // Left side of the UI (Source area)
                     if (dropPosition <= gridWidth / 2)
                     {
-                        // Dragged to the left side (Source)
+                        // If a folder is dropped, load images from the folder
                         if (storageItem.IsOfType(StorageItemTypes.Folder))
                         {
-                            // Folder dropped as source
-                            SourceFolderPath.Text = storageItem.Path; // Assuming you have a TextBox for source path
+                            SourceFolderPath.Text = storageItem.Path; // Update source folder path
                             LoadImagesFromFolder(storageItem.Path);   // Load images from the folder
                         }
+                        // If a file is dropped, ensure it's an image file before proceeding
                         else if (storageItem.IsOfType(StorageItemTypes.File))
                         {
-                            // Image file dropped
                             var fileExtension = Path.GetExtension(storageItem.Name).ToLower();
-                            if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png" || fileExtension == ".gif")
+                            if (acceptedImageExtensions.Contains(fileExtension))
                             {
                                 var folderPath = Path.GetDirectoryName(storageItem.Path);
-                                SourceFolderPath.Text = folderPath; // Display the source folder path
-                                LoadImagesFromFolder(folderPath);
+                                SourceFolderPath.Text = folderPath; // Update the folder path
+                                LoadImagesFromFolder(folderPath);   // Load images from the folder
 
                                 // Display the dropped image
                                 var imagePath = storageItem.Path;
-                                currentIndex = imageFiles.IndexOf(imagePath);
+                                currentIndex = imageFiles.IndexOf(imagePath); // Update current index
                                 if (currentIndex != -1)
                                 {
                                     DisplayImage(currentIndex);
-                                    ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
+                                    ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}"; // Show image count
                                 }
                             }
                         }
 
                     }
+                    // Right side of the UI (Destination area)
                     else
                     {
-                        // Dragged to the right side (Destination)
+                        // If a folder is dropped, update the destination folder
                         if (storageItem.IsOfType(StorageItemTypes.Folder))
                         {
-                            destinationFolder = storageItem.Path; // Set the destination folder
-                            DestinationFolderPath.Text = destinationFolder; // Display the destination path in the TextBox
+                            destinationFolder = storageItem.Path; // Set destination folder
+                            DestinationFolderPath.Text = destinationFolder; // Update the displayed path
                         }
+                        // If an image file is dropped, set its folder as the destination
                         else if (storageItem.IsOfType(StorageItemTypes.File))
                         {
-                            // Image file dropped as destination
                             var folderPath = Path.GetDirectoryName(storageItem.Path);
-                            destinationFolder = folderPath;
-                            DestinationFolderPath.Text = destinationFolder; // Display the destination path in the TextBox
+                            destinationFolder = folderPath; // Set destination folder
+                            DestinationFolderPath.Text = destinationFolder; // Update the displayed path
                         }
                     }
                 }
             }
         }
+        // Provides visual feedback during drag-over operation
         private void OnDragOver(object sender, Microsoft.UI.Xaml.DragEventArgs e)
         {
-            e.AcceptedOperation = DataPackageOperation.Copy;
+            e.AcceptedOperation = DataPackageOperation.Copy; // Allows the copy operation
             var dropPosition = e.GetPosition(MainGrid).X;
             var gridWidth = MainGrid.ActualWidth;
+
+            // Display "Drop for Source" or "Drop for Destination" based on the drag position
             e.DragUIOverride.Caption = dropPosition <= gridWidth / 2 ? "Drop for Source" : "Drop for Destination";
-            e.DragUIOverride.IsCaptionVisible = true;
-            e.DragUIOverride.IsContentVisible = true;
+            e.DragUIOverride.IsCaptionVisible = true; // Show caption
+            e.DragUIOverride.IsContentVisible = true; // Show content
         }
 
-        // Load all image files from the selected folder
+        // Loads images from the specified folder and updates UI elements accordingly
         private async void LoadImagesFromFolder(string folderPath)
         {
-            // Check if the folder path has changed before releasing resources
+            // If the folder path has changed, release resources before loading new images
             if (SourceFolderPath.Text != folderPath)
             {
-                await ReleaseImageResources();
+                await ReleaseImageResources(); // Free up resources
             }
 
+            // Load all files with the accepted image extensions from the folder
             imageFiles = Directory.GetFiles(folderPath, "*.*")
-                .Where(file => file.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
+                .Where(file => acceptedImageExtensions.Contains(Path.GetExtension(file).ToLower()))
                 .OrderBy(file => new System.Text.RegularExpressions.Regex(@"\d+").Matches(Path.GetFileNameWithoutExtension(file))
                     .Cast<System.Text.RegularExpressions.Match>()
                     .Select(m =>
@@ -211,23 +217,28 @@ namespace App1
 
             LoadPage(0); // Load the first page of images
 
+            // Update the UI with the first image and image count if images are found
             if (imageFiles.Count > 0)
             {
                 currentIndex = 0;
                 DisplayImage(currentIndex);
-                ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
+                ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}"; // Display total image count
 
+                // Set up file watcher to monitor folder changes
                 fileWatcher.Path = folderPath;
                 fileWatcher.EnableRaisingEvents = true;
             }
             else
             {
+                // Clear the UI if no images are found
                 SelectedImage.Source = null;
                 ImageFileName.Text = string.Empty;
+                ImageResolution.Text = string.Empty;
                 ImageCount.Text = string.Empty;
                 currentIndex = -1;
             }
         }
+
         // This method is called when any file change occurs in the folder
         private void OnFolderChanged(object sender, FileSystemEventArgs e)
         {
