@@ -45,8 +45,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Image display area -->
-            <Border x:Name="ImageBorder" Background="#2e2e2e" Grid.Row="0" Grid.ColumnSpan="3" Margin="10">
+            <Border x:Name="ImageBorder" Background="#2e2e2e" Margin="10">
                 <Grid>
                     <!-- Image display -->
                     <ScrollViewer x:Name="scrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" 
@@ -83,6 +82,24 @@
                         Background="#333333"
                         Foreground="White"/>
                 </Grid>
+            </Border>
+
+            <Border x:Name="GalleryBorder" Background="#2e2e2e" Margin="10" Visibility="Collapsed">
+                <GridView x:Name="ImageGridView" 
+                          Grid.Row="1"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Top"
+                          Width="Auto"
+                          Margin="10"
+                          SelectionMode="Single">
+                    <GridView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Width="150" Height="150" Margin="5">
+                                <Image Source="{Binding}" Stretch="UniformToFill" />
+                            </Grid>
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
             </Border>
 
             <!-- Controls container, placed just above the hamburger button -->
@@ -178,67 +195,6 @@
                                     OnContent="Asynchronous Mode" 
                                     IsOn="False"/>
                 </StackPanel>
-            </Border>
-
-            <Border x:Name="GalleryContainer" 
-                    Grid.Row="1"
-                    Visibility="Collapsed"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Bottom"
-                    Margin="0,0,0,10">
-
-                <Grid HorizontalAlignment="Stretch">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Previous button on the left -->
-                    <Button x:Name="PreviousGrid"
-                            Content="❮" 
-                            VerticalAlignment="Stretch"
-                            HorizontalAlignment="Left"
-                            MinHeight="115"
-                            MinWidth="30"
-                            Grid.Column="0"
-                            Click="PreviousGrid_Click" />
-                    <!-- Next button on the right -->
-                    <Button x:Name="NextGrid"
-                            Content="❯"
-                            VerticalAlignment="Stretch"
-                            HorizontalAlignment="Stretch"
-                            MinHeight="115"
-                            MinWidth="30"
-                            Grid.Column="2"
-                            Click="NextGrid_Click" />
-                    <!-- GridView in the center -->
-                    <GridView Name="ImageGridView"
-                              SelectionMode="Single"
-                              SelectionChanged="ImageGridView_SelectionChanged"
-                              HorizontalAlignment="Stretch"
-                              Grid.Column="1"
-                              VerticalAlignment="Center"
-                              Margin="5,0,0,-10">
-                        <GridView.ItemTemplate>
-                            <DataTemplate>
-                                <Image Source="{Binding}" 
-                                       Width="115" 
-                                       Height="115" 
-                                       Stretch="UniformToFill"/>
-                            </DataTemplate>
-                        </GridView.ItemTemplate>
-
-                        <GridView.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <ItemsWrapGrid Orientation="Horizontal" 
-                                               MaximumRowsOrColumns="10"
-                                               ItemWidth="115"
-                                               ItemHeight="115"/>
-                            </ItemsPanelTemplate>
-                        </GridView.ItemsPanel>
-                    </GridView>
-                </Grid>
             </Border>
             
             <Border x:Name="ConversionContainer" 
@@ -371,7 +327,8 @@
                             Click="DirectoryButton_Click"
                             ToolTipService.ToolTip="Show Directory (Ctrl + I)" />
                         <!-- Gallery Button -->
-                        <Button Content="🖼️"
+                        <Button x:Name="GalleryButton"
+                            Content="🖼️"
                             Width="40" 
                             Height="30" 
                             FontSize="12"

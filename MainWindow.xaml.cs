@@ -6,7 +6,6 @@ using Windows.Foundation;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Imaging;
-using Windows.Media.Playback;
 using Windows.Storage.Pickers;
 using Windows.UI.Popups;
 using System.Threading.Tasks;
@@ -19,7 +18,6 @@ using Microsoft.UI.Xaml.Controls;
 using ImageMagick;
 using System.Diagnostics;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Media;
 
 namespace App1
 {
@@ -37,16 +35,9 @@ namespace App1
         private string destinationFolder;  // Stores the destination folder path
         private FileSystemWatcher fileWatcher; // Monitors the folder for any changes
 
-        // Media playback
-        private MediaPlayer mediaPlayer;   // Used for sound playback
-
         // Image zoom functionality
         private double _translateX = 0;    // Horizontal translation for zoomed image
         private double _translateY = 0;    // Vertical translation for zoomed image
-
-        // Grid view gallery
-        private const int PageSize = 10;
-        private int currentPage = 0;
 
         public MainWindow()
         {
@@ -65,11 +56,9 @@ namespace App1
                 { (VirtualKey.Down, false), (sender, e) => CopyImage_Click(sender, e) },                                            // Down arrow to copy
                 { (VirtualKey.Left, false), (sender, e) => PreviousImage_Click(sender, e) },                                        // Left arrow for previous image
                 { (VirtualKey.Right, false), (sender, e) => NextImage_Click(sender, e) },                                           // Right arrow for next image
-                { (VirtualKey.Left, true), (sender, e) => PreviousGrid_Click(sender, e) },                                          // Ctrl + Left arrow for previous gallery
-                { (VirtualKey.Right, true), (sender, e) => NextGrid_Click(sender, e) },                                             // Ctrl + Right arrow for next gallery
                 { (VirtualKey.Delete, false), (sender, e) => DeleteImage_Click(sender, e) },                                        // Delete key
                 { (VirtualKey.I, true), (sender, e) => DirectoryButton_Click(sender, e)},                                           // Show Directory Panel
-                { (VirtualKey.G, true), (sender, e) => GalleryButton_Click(sender, e)},                                           // Show Gallery Panel
+                { (VirtualKey.G, true), (sender, e) => GalleryButton_Click(sender, e)},                                             // Show Gallery Panel
                 { (VirtualKey.R, true), (sender, e) => ConversionButton_Click(sender, e)},                                          // Show Conversion Panel
                 { (VirtualKey.F2, false), (sender, e) => ImageFileName_DoubleTapped(sender, new DoubleTappedRoutedEventArgs()) },   // F2 to rename
                 { (VirtualKey.F3, false), (sender, e) => ImageCount_DoubleTapped(sender, new DoubleTappedRoutedEventArgs()) },      // F3 to jump
@@ -215,7 +204,8 @@ namespace App1
                 .ThenBy(file => file)
                 .ToList();
 
-            LoadPage(0); // Load the first page of images
+            // Bind the image files to the GridView
+            ImageGridView.ItemsSource = imageFiles;
 
             // Update the UI with the first image and image count if images are found
             if (imageFiles.Count > 0)
@@ -266,27 +256,7 @@ namespace App1
             });
         }
 
-        // Method to load a specific page of images
-        private void LoadPage(int pageIndex)
-        {
-            currentPage = pageIndex;
-            var pageItems = imageFiles.Skip(pageIndex * PageSize).Take(PageSize).ToList();
-            ImageGridView.ItemsSource = pageItems.Select(f => new BitmapImage(new Uri(f))).ToList();
-        }
-        private void ImageGridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (ImageGridView.SelectedItem != null)
-            {
-                // Calculate global index based on current page and the selected index within that page
-                currentIndex = (currentPage * PageSize) + ImageGridView.SelectedIndex;
 
-                // Display the selected image in the main viewer
-                DisplayImage(currentIndex);
-
-                // Update the image count to show the global index
-                ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
-            }
-        }
         // Adjust Next and Previous buttons to handle paging
         private void NextImage_Click(object sender, RoutedEventArgs e)
         {
@@ -296,9 +266,7 @@ namespace App1
             {
                 // Increment index and loop around if at the end
                 currentIndex = (currentIndex + 1) % imageFiles.Count;
-
-                // Update the selection in the GridView and display the new image
-                UpdateSelection();  // This updates both the GridView selection and the displayed image
+                UpdateSelection();
             }
         }
         private void PreviousImage_Click(object sender, RoutedEventArgs e)
@@ -309,20 +277,11 @@ namespace App1
             {
                 // Decrement index and loop around if at the beginning
                 currentIndex = (currentIndex - 1 + imageFiles.Count) % imageFiles.Count;
-
-                // Update the selection in the GridView and display the new image
-                UpdateSelection();  // This updates both the GridView selection and the displayed image
+                UpdateSelection();
             }
         }
         private void UpdateSelection()
         {
-            // Load the appropriate page based on the current index
-            int pageIndex = currentIndex / PageSize;
-            LoadPage(pageIndex);
-
-            // Select the correct image in the GridView
-            ImageGridView.SelectedIndex = currentIndex % PageSize;
-
             // Update the image count display
             ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
 
@@ -337,7 +296,6 @@ namespace App1
             if (selectedContainer.Visibility == Visibility.Collapsed)
             {
                 DirectoryContainer.Visibility = Visibility.Collapsed;
-                GalleryContainer.Visibility = Visibility.Collapsed;
                 ConversionContainer.Visibility = Visibility.Collapsed;
 
                 // Show the selected container
@@ -354,63 +312,31 @@ namespace App1
         {
             ToggleContainerVisibility(DirectoryContainer);
         }
-        // Event handler for the Gallery button
+        private bool isPreviewMode = true; // Start in preview mode
+
         private void GalleryButton_Click(object sender, RoutedEventArgs e)
         {
-            ToggleContainerVisibility(GalleryContainer);
+            if (isPreviewMode)
+            {
+                // Switch to gallery mode
+                GalleryBorder.Visibility = Visibility.Visible;
+                ImageBorder.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                // Switch to preview mode
+                ImageBorder.Visibility = Visibility.Visible;
+                GalleryBorder.Visibility = Visibility.Collapsed;
+            }
+
+            isPreviewMode = !isPreviewMode; // Toggle the mode
         }
+
         // Event handler for the Conversion button
         private void ConversionButton_Click(object sender, RoutedEventArgs e)
         {
             ToggleContainerVisibility(ConversionContainer);
         }
-
-
-        private void NextGrid_Click(object sender, RoutedEventArgs e)
-        {
-            // Navigate to the next set of images with circular navigation
-            currentIndex = (currentIndex + PageSize) % imageFiles.Count;
-
-            // Update the current page based on the new index
-            currentPage = currentIndex / PageSize;
-
-            // Load the images for the new page
-            LoadPage(currentPage);
-
-            // Jump to the first image in the GridView of the next page
-            ImageGridView.SelectedIndex = 0;
-            currentIndex = currentPage * PageSize;
-
-            // Update the display and image count
-            DisplayImage(currentIndex);
-            ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
-        }
-        private void PreviousGrid_Click(object sender, RoutedEventArgs e)
-        {
-            // Navigate to the previous set of images with circular navigation
-            currentIndex = (currentIndex - PageSize + imageFiles.Count) % imageFiles.Count;
-
-            // Update the current page based on the new index
-            currentPage = currentIndex / PageSize;
-
-            // Load the images for the new page
-            LoadPage(currentPage);
-
-            // Determine the number of items on the current page
-            var itemsOnCurrentPage = imageFiles.Skip(currentPage * PageSize).Take(PageSize).Count();
-
-            // Jump to the last image in the GridView of the previous page
-            ImageGridView.SelectedIndex = itemsOnCurrentPage - 1; // Select the last item on the page
-            currentIndex = (currentPage * PageSize) + ImageGridView.SelectedIndex;
-
-            // Update the display and image count
-            DisplayImage(currentIndex);
-            ImageCount.Text = $"{currentIndex + 1} / {imageFiles.Count}";
-        }
-
-        // Method to display an image at the given index
-        private CompositeTransform imageTransform = new CompositeTransform();
-
 
         // Method to display an image at the given index (unchanged logic)
         private void DisplayImage(int currentIndex)
@@ -493,6 +419,91 @@ namespace App1
                         ImageFileName.Text = "N/A";
                         ImageCount.Text = "N/A";
                     });
+                }
+            }
+        }
+
+        // Methods for Directory
+        private async void BrowseImageFolder_Click(object sender, RoutedEventArgs e)
+        {
+            FolderPicker folderPicker = new FolderPicker();
+            folderPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+            folderPicker.FileTypeFilter.Add("*");
+
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);  // Get HWND for WinUI 3 compatibility
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                SourceFolderPath.Text = folder.Path;  // Update the Image Folder Path textbox
+                LoadImagesFromFolder(folder.Path);    // Load all images from the selected folder
+
+                // Enable the SwitchFolders button if both source and destination are filled
+                UpdateSwitchFoldersButtonState();
+            }
+        }
+        private async void BrowseDestinationFolder_Click(object sender, RoutedEventArgs e)
+        {
+            FolderPicker folderPicker = new FolderPicker();
+            folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+            folderPicker.FileTypeFilter.Add("*");
+
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);  // Get HWND for WinUI 3 compatibility
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                DestinationFolderPath.Text = folder.Path;
+                destinationFolder = folder.Path;  // Set the destination folder
+
+                // Enable the SwitchFolders button if both source and destination are filled
+                UpdateSwitchFoldersButtonState();
+            }
+        }
+
+        // Function to update the state of the SwitchFolders button
+        private void UpdateSwitchFoldersButtonState()
+        {
+            // Enable the SwitchFolders button if both source and destination folders are selected
+            SwitchFolders.IsEnabled = !string.IsNullOrEmpty(SourceFolderPath.Text) && !string.IsNullOrEmpty(DestinationFolderPath.Text);
+        }
+        private void SwitchFolders_Click(object sender, RoutedEventArgs e)
+        {
+            // Swap the paths of the source and destination folders
+            string temp = SourceFolderPath.Text;
+            SourceFolderPath.Text = DestinationFolderPath.Text;
+            DestinationFolderPath.Text = temp;
+
+            // Update the destination folder variable
+            destinationFolder = DestinationFolderPath.Text;
+
+            // Check if the new source folder (previous destination folder) is empty
+            if (!string.IsNullOrEmpty(SourceFolderPath.Text) && Directory.Exists(SourceFolderPath.Text))
+            {
+                var files = Directory.GetFiles(SourceFolderPath.Text);
+                if (files.Length == 0)
+                {
+                    // If the folder is empty, clear the imageFiles list and other UI elements
+                    imageFiles.Clear();
+                    SelectedImage.Source = null;
+                    ImageFileName.Text = string.Empty;
+                    ImageCount.Text = string.Empty;
+                    currentIndex = -1;
+
+                    // Disable the file watcher since there is no folder to watch
+                    fileWatcher.EnableRaisingEvents = false;
+                }
+                else
+                {
+                    // Update the FileSystemWatcher to monitor the new source folder if it's not empty
+                    fileWatcher.EnableRaisingEvents = false;  // Disable the watcher to avoid conflicts during switching
+                    fileWatcher.Path = SourceFolderPath.Text;
+                    fileWatcher.EnableRaisingEvents = true;  // Re-enable the watcher
+
+                    // Reload the images from the new source folder
+                    LoadImagesFromFolder(SourceFolderPath.Text);
                 }
             }
         }
@@ -641,92 +652,7 @@ namespace App1
             compositeTransform.TranslateY = _translateY;
         }
 
-        // Methods for Directory
-        private async void BrowseImageFolder_Click(object sender, RoutedEventArgs e)
-        {
-            FolderPicker folderPicker = new FolderPicker();
-            folderPicker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-            folderPicker.FileTypeFilter.Add("*");
-
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);  // Get HWND for WinUI 3 compatibility
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
-
-            var folder = await folderPicker.PickSingleFolderAsync();
-            if (folder != null)
-            {
-                SourceFolderPath.Text = folder.Path;  // Update the Image Folder Path textbox
-                LoadImagesFromFolder(folder.Path);    // Load all images from the selected folder
-
-                // Enable the SwitchFolders button if both source and destination are filled
-                UpdateSwitchFoldersButtonState();
-            }
-        }
-        private async void BrowseDestinationFolder_Click(object sender, RoutedEventArgs e)
-        {
-            FolderPicker folderPicker = new FolderPicker();
-            folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-            folderPicker.FileTypeFilter.Add("*");
-
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);  // Get HWND for WinUI 3 compatibility
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
-
-            var folder = await folderPicker.PickSingleFolderAsync();
-            if (folder != null)
-            {
-                DestinationFolderPath.Text = folder.Path;
-                destinationFolder = folder.Path;  // Set the destination folder
-
-                // Enable the SwitchFolders button if both source and destination are filled
-                UpdateSwitchFoldersButtonState();
-            }
-        }
-
-        // Function to update the state of the SwitchFolders button
-        private void UpdateSwitchFoldersButtonState()
-        {
-            // Enable the SwitchFolders button if both source and destination folders are selected
-            SwitchFolders.IsEnabled = !string.IsNullOrEmpty(SourceFolderPath.Text) && !string.IsNullOrEmpty(DestinationFolderPath.Text);
-        }
-        private void SwitchFolders_Click(object sender, RoutedEventArgs e)
-        {
-            // Swap the paths of the source and destination folders
-            string temp = SourceFolderPath.Text;
-            SourceFolderPath.Text = DestinationFolderPath.Text;
-            DestinationFolderPath.Text = temp;
-
-            // Update the destination folder variable
-            destinationFolder = DestinationFolderPath.Text;
-
-            // Check if the new source folder (previous destination folder) is empty
-            if (!string.IsNullOrEmpty(SourceFolderPath.Text) && Directory.Exists(SourceFolderPath.Text))
-            {
-                var files = Directory.GetFiles(SourceFolderPath.Text);
-                if (files.Length == 0)
-                {
-                    // If the folder is empty, clear the imageFiles list and other UI elements
-                    imageFiles.Clear();
-                    SelectedImage.Source = null;
-                    ImageFileName.Text = string.Empty;
-                    ImageCount.Text = string.Empty;
-                    currentIndex = -1;
-
-                    // Disable the file watcher since there is no folder to watch
-                    fileWatcher.EnableRaisingEvents = false;
-                }
-                else
-                {
-                    // Update the FileSystemWatcher to monitor the new source folder if it's not empty
-                    fileWatcher.EnableRaisingEvents = false;  // Disable the watcher to avoid conflicts during switching
-                    fileWatcher.Path = SourceFolderPath.Text;
-                    fileWatcher.EnableRaisingEvents = true;  // Re-enable the watcher
-
-                    // Reload the images from the new source folder
-                    LoadImagesFromFolder(SourceFolderPath.Text);
-                }
-            }
-        }
         // Methods for Conversion
-
         private async void ConvertImage_Click(object sender, RoutedEventArgs e)
         {
             if (currentIndex < 0 || currentIndex >= imageFiles.Count)
@@ -801,7 +727,6 @@ namespace App1
             }
             DisplayImage(currentIndex);
         }
-
         // Helper method to perform the actual conversion
         private async Task ConvertImageToFormat(string imagePath, string selectedExtension)
         {
@@ -1231,21 +1156,6 @@ namespace App1
                         SelectedImage.Source = null;   // Set the image to null
                     }
                 });
-
-                // Clear GridView items (also holds BitmapImage objects)
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (ImageGridView.ItemsSource is IEnumerable<BitmapImage> imageGridSource)
-                    {
-                        foreach (var gridImage in imageGridSource)
-                        {
-                            gridImage.UriSource = null;  // Clear image resources
-                        }
-                    }
-
-                    ImageGridView.ItemsSource = null;  // Clear the image grid
-                });
-
                 // Clear the image list in memory
                 imageFiles?.Clear();
 
